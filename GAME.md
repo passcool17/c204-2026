@@ -83,7 +83,7 @@ Silhouette de cabriolet générique, **sans aucun logo ni marque** (pas d'emblè
 | `mirror_l` `mirror_r` | Rétroviseurs (comptent dans la largeur 1,92 m) |
 | **`c204_2026_unit`** | **Point d'ancrage** : groupe vide à l'arrière côté passager (+X, −Z). L'unité (`c204_2026_root`) est enfant de ce nœud. |
 
-Position provisoire de `c204_2026_unit` (espace `lexus_lc_root`) : **x = 0,38 m, y = 0,30 m, z = −0,92 m**, rotation 0. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
+Position provisoire de `c204_2026_unit` (espace `lexus_lc_root`) : **x = −0,38 m, y = 0,30 m, z = −0,92 m** (avant en +Z, donc côté passager = −X, conducteur à gauche = +X), rotation 0. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
 
 Dans l'app : si les deux GLB sont présents, on charge la voiture, on cherche `c204_2026_unit`, et on y place `c204_2026_root` (sauf si l'unité est déjà enfant de ce nœud). Si un GLB est absent (`url` null ou fichier manquant), repli sur les primitives du même nom.
 
@@ -136,7 +136,7 @@ Quand les GLB sont livrés : copier les fichiers dans `assets/` et mettre `url` 
 - App Three.js r170, dépôt `passcool17/c204-2026`, modèles en primitives (aucun GLB encore : `assets/model.json` a `url: null`).
 - Trois modes : Vue (unité dans le cabriolet, à l'arrière côté passager), Éclatée (interpolation des positions), Assemblage à la maison (25 étapes, dont 24 pièces + vue d'ensemble). Bannière « Guide fictif — pas un vrai plan ».
 - Lien vers https://passcool17.github.io/titor-c204/. Le lien retour dans titor-c204 est à ajouter plus tard (dépôt en pause, non modifié).
-- Dimensions mesurées (primitives) : unité 0,33 × 0,29 × 0,72 m (cible 0,32 × 0,26 × 0,72 ; un peu plus haute à cause de l'écran sur le dessus) ; voiture 1,92 × 1,33 × 4,80 m (cible 1,92 × 1,35 × 4,77). Point d'ancrage `c204_2026_unit` à (0,38 ; 0,30 ; −0,92).
+- Dimensions mesurées (primitives) : unité 0,33 × 0,29 × 0,72 m (cible 0,32 × 0,26 × 0,72 ; un peu plus haute à cause de l'écran sur le dessus) ; voiture 1,92 × 1,33 × 4,80 m (cible 1,92 × 1,35 × 4,77). Point d'ancrage `c204_2026_unit` à (−0,38 ; 0,30 ; −0,92).
 - Tests Playwright : `/workspace/games3d/c204-2026-tests/t01.js`, 412×915 et 915×412, 54 assertions, 0 échec, 0 erreur console, 0 réponse 404. Captures : `/workspace/games3d/c204-2026-v01.png` (vue) et `c204-2026-v01-assemblage.png` (étape 10).
 - Fps réel du S20 et Safari non mesurés (la box rend en logiciel).
 

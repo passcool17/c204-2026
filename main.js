@@ -295,10 +295,10 @@ function buildCar() {
   }
   C.add(grille);
 
-  C.add(box(0.28, 0.08, 0.08, M.light, -0.68, 0.50, zF - 0.03, 'headlight_l'));
-  C.add(box(0.28, 0.08, 0.08, M.light, 0.68, 0.50, zF - 0.03, 'headlight_r'));
-  C.add(box(0.38, 0.07, 0.06, M.tail, -0.62, 0.58, zR + 0.04, 'taillight_l'));
-  C.add(box(0.38, 0.07, 0.06, M.tail, 0.62, 0.58, zR + 0.04, 'taillight_r'));
+  C.add(box(0.28, 0.08, 0.08, M.light, 0.68, 0.50, zF - 0.03, 'headlight_l'));
+  C.add(box(0.28, 0.08, 0.08, M.light, -0.68, 0.50, zF - 0.03, 'headlight_r'));
+  C.add(box(0.38, 0.07, 0.06, M.tail, 0.62, 0.58, zR + 0.04, 'taillight_l'));
+  C.add(box(0.38, 0.07, 0.06, M.tail, -0.62, 0.58, zR + 0.04, 'taillight_r'));
 
   const windshield = box(bodyW - 0.22, 0.62, 0.04, M.glass, 0, 1.05, 0.58, 'windshield');
   windshield.rotation.x = -0.55;
@@ -320,7 +320,7 @@ function buildCar() {
   C.add(cabin);
 
   C.add(box(bodyW - 0.3, 0.12, 0.55, M.trim, 0, 0.62, 0.55, 'dashboard'));
-  C.add(cyl(0.16, 0.16, 0.03, 20, M.trim, -0.32, 0.78, 0.42, 'steering_wheel', Math.PI / 2));
+  C.add(cyl(0.16, 0.16, 0.03, 20, M.trim, 0.32, 0.78, 0.42, 'steering_wheel', Math.PI / 2));
 
   function seat(name, x, z, matl) {
     const s = new THREE.Group();
@@ -330,9 +330,9 @@ function buildCar() {
     s.position.set(x, 0.42, z);
     C.add(s);
   }
-  seat('seat_driver', -0.38, 0.12, M.leather);
-  seat('seat_passenger', 0.38, 0.12, M.leather);
-  seat('seat_rear_driver', -0.38, -0.85, M.leather2);
+  seat('seat_driver', 0.38, 0.12, M.leather);
+  seat('seat_passenger', -0.38, 0.12, M.leather);
+  seat('seat_rear_driver', 0.38, -0.85, M.leather2);
   // Pas de siège arrière passager : la place est prise par l'unité.
 
   const top = new THREE.Group();
@@ -357,8 +357,8 @@ function buildCar() {
   wheel('wheel_rl', -track, -WB / 2);
   wheel('wheel_rr', track, -WB / 2);
 
-  const mirL = box(0.12, 0.08, 0.18, M.paint, -W / 2 + 0.06, 0.92, 0.52, 'mirror_l');
-  const mirR = box(0.12, 0.08, 0.18, M.paint, W / 2 - 0.06, 0.92, 0.52, 'mirror_r');
+  const mirL = box(0.12, 0.08, 0.18, M.paint, W / 2 - 0.06, 0.92, 0.52, 'mirror_l');
+  const mirR = box(0.12, 0.08, 0.18, M.paint, -W / 2 + 0.06, 0.92, 0.52, 'mirror_r');
   C.add(mirL); C.add(mirR);
 
   const mount = new THREE.Group();

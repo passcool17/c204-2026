@@ -1,6 +1,6 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/ (à confirmer après le déploiement Pages)
+- Lien jouable : https://passcool17.github.io/c204-2026/?v=d6a536d
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
 - État : **v0.1 provisoire** — modèles en primitives Three.js. Les GLB finaux de la chaîne 3D (Modélisation → Rig → Rendu) se brancheront via `assets/model.json`, sans changer les noms de nœuds.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).

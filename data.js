@@ -2,7 +2,7 @@
 // (document fictif, non vérifié). Aucune machine réelle de ce type
 // n'a été démontrée. Le guide d'assemblage n'est pas un vrai plan.
 
-export const VERSION = '0.1.2';
+export const VERSION = '0.2.0';
 
 export const FRAME =
   'Version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n\'a été démontrée.';
@@ -224,9 +224,36 @@ export const NAME2ID = {
   battery_pack: 'battery_pack',
 };
 
+// Alias des pièces « extras » du GLB (69 nœuds) vers les 24 fiches.
+// Préfixes longs d'abord dans idFor. housing_latch → lid (étape 24), pas housing.
+export const NODE_ALIASES = {
+  housing_latch: 'lid',
+  radiation_firewall: 'housing',
+  cable_cooling: 'cooling_tank',
+  cooling_fan: 'cooling_pump',
+  xray_vent: 'cooling_pump',
+  emergency_disconnect_main: 'singularity_main_housing',
+  motion_sensor_main: 'singularity_main_housing',
+  singularity_main: 'singularity_main_housing',
+  emergency_disconnect_steering: 'singularity_steering_housing',
+  motion_sensor_steering: 'singularity_steering_housing',
+  singularity_steering: 'singularity_steering_housing',
+  cable_injector: 'electron_injector_manifold',
+  injector_nozzle: 'electron_injector_manifold',
+  cable_vgl: 'gravity_sensor_unit',
+  cable_clock: 'control_computer',
+  cable_power: 'battery_pack',
+  cable_screen: 'touchscreen',
+  touch_screen: 'touchscreen',
+  led_indicator: 'led_status',
+};
+
 export function idFor(name) {
   const n = (name || '').toLowerCase();
-  const keys = Object.keys(NAME2ID).sort((a, b) => b.length - a.length);
-  const k = keys.find(k => n === k || n.startsWith(k + '_'));
-  return k ? NAME2ID[k] : null;
+  if (!n) return null;
+  const map = { ...NAME2ID, ...NODE_ALIASES };
+  if (map[n]) return map[n];
+  const keys = Object.keys(map).sort((a, b) => b.length - a.length);
+  const k = keys.find(k => n.startsWith(k + '_'));
+  return k ? map[k] : null;
 }

@@ -7,7 +7,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.1';
+} from './data.js?v=0.2';
 
 const $ = (s, r = document) => r.querySelector(s);
 const canvas = $('#c');
@@ -61,7 +61,8 @@ const _q2 = new THREE.Quaternion();
 
 let unitRoot = null, carRoot = null, mountNode = null;
 let source = { unit: 'procedural', car: 'procedural' };
-let explodeAction = null;
+let mixer = null, clipMap = {}, currentAction = null, currentClipName = null;
+const restPoses = [];
 let mode = 'view';
 let explodeT = 0, explodeTarget = 0;
 let assembleStep = 1, assembleLerp = 1, animMs = 450;
@@ -388,16 +389,21 @@ function registerParts(root) {
 
   const byId = {};
   const seen = new Set();
-  root.traverse(o => {
-    if (o === root) return;
-    const id = idFor(o.name);
-    if (!id || seen.has(o)) return;
-    // On prend le nœud nommé, pas ses enfants déjà couverts.
+  const assign = (o, id) => {
+    if (!o || o === root || seen.has(o) || !id) return;
     seen.add(o);
-    o.traverse(ch => seen.add(ch));
-    (byId[id] ||= []).push(o);
     o.userData.partId = id;
+    (byId[id] ||= []).push(o);
     pickables.push(o);
+  };
+  // Nœuds canoniques par nom (getObjectByName), indépendamment de la hiérarchie.
+  for (const b of BOM) {
+    for (const n of b.nodes) assign(root.getObjectByName(n), b.id);
+  }
+  // Extras (câbles, voyants, cadres…) y compris enfants imbriqués, via idFor.
+  root.traverse(o => {
+    if (o === root || seen.has(o) || !o.name) return;
+    assign(o, idFor(o.name));
   });
 
   const ids = Object.keys(byId);
@@ -433,46 +439,48 @@ function partObjs(id) {
 }
 
 function applyPoses() {
-  const lidOpen = (mode === 'explode' && explodeT > 0.15) || (mode === 'assemble' && assembleStep < 24);
-  for (const e of entries) {
-    for (let k = 0; k < e.objs.length; k++) {
-      const o = e.objs[k];
-      const base = e.bases[k];
-      let tx = base.x, ty = base.y, tz = base.z;
-      let tq = e.rots[k];
-      if (mode === 'explode') {
-        tx = base.x + e.explode[k].x * explodeT;
-        ty = base.y + e.explode[k].y * explodeT;
-        tz = base.z + e.explode[k].z * explodeT;
-        if (e.lid) tq = e.rots[k].clone().slerp(e.openQx, explodeT);
-      } else if (mode === 'assemble') {
-        const stepOf = ASSEMBLY.find(a => a.id === e.id);
-        const s = stepOf ? stepOf.step : 99;
-        if (assembleStep === 25 || s < assembleStep) {
-          tx = base.x; ty = base.y; tz = base.z;
-          if (e.lid) tq = e.rots[k]; // fermé une fois passé
-        } else if (s === assembleStep) {
-          const t = assembleLerp;
-          const kitP = e.kit[k];
-          tx = base.x + kitP.x * (1 - t);
-          ty = base.y + kitP.y * (1 - t);
-          tz = base.z + kitP.z * (1 - t);
-          if (e.lid) tq = e.openQx.clone().slerp(e.rots[k], t);
-        } else {
-          const kitP = e.kit[k];
-          tx = base.x + kitP.x;
-          ty = base.y + kitP.y;
-          tz = base.z + kitP.z;
-          if (e.lid) tq = e.openQx;
+  const useClips = source.unit === 'glb' && mixer;
+  if (!useClips) {
+    const lidOpen = (mode === 'explode' && explodeT > 0.15) || (mode === 'assemble' && assembleStep < 24);
+    for (const e of entries) {
+      for (let k = 0; k < e.objs.length; k++) {
+        const o = e.objs[k];
+        const base = e.bases[k];
+        let tx = base.x, ty = base.y, tz = base.z;
+        let tq = e.rots[k];
+        if (mode === 'explode') {
+          tx = base.x + e.explode[k].x * explodeT;
+          ty = base.y + e.explode[k].y * explodeT;
+          tz = base.z + e.explode[k].z * explodeT;
+          if (e.lid) tq = e.rots[k].clone().slerp(e.openQx, explodeT);
+        } else if (mode === 'assemble') {
+          const stepOf = ASSEMBLY.find(a => a.id === e.id);
+          const s = stepOf ? stepOf.step : 99;
+          if (assembleStep === 25 || s < assembleStep) {
+            tx = base.x; ty = base.y; tz = base.z;
+            if (e.lid) tq = e.rots[k];
+          } else if (s === assembleStep) {
+            const t = assembleLerp;
+            const kitP = e.kit[k];
+            tx = base.x + kitP.x * (1 - t);
+            ty = base.y + kitP.y * (1 - t);
+            tz = base.z + kitP.z * (1 - t);
+            if (e.lid) tq = e.openQx.clone().slerp(e.rots[k], t);
+          } else {
+            const kitP = e.kit[k];
+            tx = base.x + kitP.x;
+            ty = base.y + kitP.y;
+            tz = base.z + kitP.z;
+            if (e.lid) tq = e.openQx;
+          }
+        } else if (e.lid) {
+          tq = e.rots[k];
         }
-      } else if (e.lid) {
-        tq = e.rots[k];
+        o.position.set(tx, ty, tz);
+        if (e.lid) o.quaternion.copy(tq);
       }
-      o.position.set(tx, ty, tz);
-      if (e.lid) o.quaternion.copy(tq);
     }
   }
-  // Couvercle ouvert en vue éclatée déjà géré. En vue, fermé.
   // Surlignage assemblage.
   const curId = mode === 'assemble' ? ASSEMBLY[assembleStep - 1]?.id : null;
   for (const e of entries) {
@@ -531,28 +539,130 @@ async function tryGLB(url) {
   }
 }
 
-function hookExplodeClip(gltf) {
-  if (!gltf?.animations?.length) return null;
-  const clip = gltf.animations.find(a => a.name === 'explode');
-  if (!clip) return null;
-  const mixer = new THREE.AnimationMixer(gltf.scene);
+function disposeTree(obj) {
+  if (!obj) return;
+  obj.removeFromParent();
+  obj.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    mats.forEach(m => {
+      if (!m) return;
+      for (const v of Object.values(m)) if (v && v.isTexture) v.dispose();
+      m.dispose();
+    });
+  });
+}
+
+function snapshotRest(root) {
+  restPoses.length = 0;
+  root.traverse(o => {
+    if (o === root) return;
+    restPoses.push({
+      obj: o,
+      pos: o.position.clone(),
+      quat: o.quaternion.clone(),
+      scale: o.scale.clone(),
+    });
+  });
+}
+
+function restoreRest() {
+  for (const r of restPoses) {
+    r.obj.position.copy(r.pos);
+    r.obj.quaternion.copy(r.quat);
+    r.obj.scale.copy(r.scale);
+  }
+}
+
+function setupMixer(root, animations) {
+  mixer = new THREE.AnimationMixer(root);
+  clipMap = {};
+  for (const c of animations || []) if (c?.name) clipMap[c.name] = c;
+  currentAction = null;
+  currentClipName = null;
+}
+
+function playClip(name, { loop = false, instant = false } = {}) {
+  if (!mixer || !clipMap[name]) return false;
+  mixer.stopAllAction();
+  const clip = clipMap[name];
   const action = mixer.clipAction(clip);
-  action.setLoop(THREE.LoopOnce, 1);
-  action.clampWhenFinished = true;
-  return { mixer, action, clip };
+  action.enabled = true;
+  action.weight = 1;
+  if (loop) {
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = false;
+  } else {
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+  }
+  action.paused = false;
+  action.timeScale = (!loop && animMs < 200 && clip.duration > 0) ? clip.duration / (animMs / 1000) : 1;
+  action.reset();
+  if (instant && !loop) {
+    action.time = clip.duration;
+    action.play();
+    action.paused = true;
+    mixer.update(0);
+  } else {
+    action.play();
+  }
+  currentAction = action;
+  currentClipName = name;
+  return true;
+}
+
+function playAssembleClip(step, instant = false) {
+  if (step >= 25) {
+    restoreRest();
+    playClip('idle', { loop: true });
+    assembleLerp = 1;
+    return true;
+  }
+  const name = 'assemble_' + String(step).padStart(2, '0');
+  const ok = playClip(name, { instant });
+  assembleLerp = instant || !ok ? 1 : 0;
+  return ok;
+}
+
+function openLid(instant = false) {
+  restoreRest();
+  return playClip('lid_open', { instant });
+}
+
+function hasClips() {
+  return source.unit === 'glb' && !!mixer && Object.keys(clipMap).length > 0;
+}
+
+function fitUnit(root, target) {
+  root.updateWorldMatrix(true, true);
+  const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+  if (size.x < 1e-4 || size.y < 1e-4 || size.z < 1e-4) return;
+  const sx = target.x / size.x, sy = target.y / size.y, sz = target.z / size.z;
+  const s = (sx + sy + sz) / 3;
+  if (!isFinite(s) || s <= 0) return;
+  // Ne corrige que si l'écart est net (> 20 %). Sinon on garde l'échelle 1 du GLB.
+  if (s < 0.8 || s > 1.25) root.scale.multiplyScalar(s);
 }
 
 async function boot() {
   const cfg = await loadConfig();
   carRoot = buildCar();
-  unitRoot = buildUnit();
+  const proceduralUnit = buildUnit();
+  unitRoot = proceduralUnit;
   source = { unit: 'procedural', car: 'procedural' };
+
+  const procSize = (() => {
+    proceduralUnit.updateWorldMatrix(true, true);
+    return new THREE.Box3().setFromObject(proceduralUnit).getSize(new THREE.Vector3());
+  })();
 
   const [gUnit, gCar] = await Promise.all([tryGLB(cfg.unit?.url), tryGLB(cfg.car?.url)]);
 
   if (gCar) {
     scene.remove(carRoot);
-    const found = gCar.scene.getObjectByName(ROOTS.car) || gCar.scene;
+    disposeTree(carRoot);
+    const found = gCar.scene.getObjectByName(ROOTS.car) || gCar.scene.getObjectByName(cfg.car?.root || ROOTS.car) || gCar.scene;
     carRoot = found;
     source.car = 'glb';
   }
@@ -566,10 +676,16 @@ async function boot() {
   }
 
   if (gUnit) {
-    const found = gUnit.scene.getObjectByName(ROOTS.unit) || gUnit.scene;
+    const found = gUnit.scene.getObjectByName(ROOTS.unit) || gUnit.scene.getObjectByName(cfg.unit?.root || ROOTS.unit) || gUnit.scene;
+    spiners.length = 0;
+    ledMats.length = 0;
+    screenMat = null;
+    disposeTree(proceduralUnit);
     unitRoot = found;
     source.unit = 'glb';
-    explodeAction = hookExplodeClip(gUnit);
+    fitUnit(unitRoot, procSize);
+    snapshotRest(unitRoot);
+    setupMixer(unitRoot, gUnit.animations);
   }
 
   const already = mountNode.getObjectByName(ROOTS.unit);
@@ -577,6 +693,7 @@ async function boot() {
   if (unitRoot.parent !== mountNode) mountNode.add(unitRoot);
 
   registerParts(unitRoot);
+  if (hasClips()) playClip('idle', { loop: true });
   applyPoses();
   // Petite lumière sur l'unité, pour la voir dans l'habitacle (S20 : une seule, pas d'ombre).
   const unitLit = new THREE.PointLight(0x8affe0, 0.28, 1.5, 2);
@@ -592,6 +709,7 @@ async function boot() {
   if (demo === 'explode') setMode('explode');
   if (demo === 'assemble') setMode('assemble');
   if (demo === 'labels') setLabels(true);
+  if (demo === 'lid') openLid();
 }
 
 /* ---------- Caméra ---------- */
@@ -648,13 +766,20 @@ function setMode(m) {
     assembleLerp = 0;
     updateAssembleUI();
     frameCamera('unit');
+    if (hasClips()) playAssembleClip(1, false);
   } else if (m === 'explode') {
     frameCamera('unit');
-    if (explodeAction) {
-      explodeAction.action.reset().play();
+    if (hasClips()) {
+      restoreRest();
+      playClip('explode');
     }
   } else {
     frameCamera('view');
+    explodeT = 0;
+    if (hasClips()) {
+      restoreRest();
+      playClip('idle', { loop: true });
+    }
   }
   applyPoses();
 }
@@ -664,12 +789,19 @@ function setAssembleStep(n, instant = false) {
   assembleLerp = instant ? 1 : 0;
   if (assembleStep === 25) frameCamera('wide');
   else frameCamera('unit');
+  if (hasClips()) playAssembleClip(assembleStep, instant);
   updateAssembleUI();
   applyPoses();
 }
 function nextStep() {
   if (mode !== 'assemble') return;
-  if (assembleLerp < 0.98 && assembleStep < 25) { assembleLerp = 1; applyPoses(); updateAssembleUI(); return; }
+  if (assembleLerp < 0.98 && assembleStep < 25) {
+    if (hasClips()) playAssembleClip(assembleStep, true);
+    assembleLerp = 1;
+    applyPoses();
+    updateAssembleUI();
+    return;
+  }
   if (assembleStep < ASSEMBLY.length) setAssembleStep(assembleStep + 1);
 }
 function prevStep() {
@@ -945,22 +1077,37 @@ function tick() {
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
 
-  if (mode === 'explode' && !explodeAction) {
-    const spd = 1.6;
-    explodeT += (explodeTarget - explodeT) * Math.min(1, dt * spd * 3);
-    if (Math.abs(explodeTarget - explodeT) < 0.003) explodeT = explodeTarget;
-  } else if (mode !== 'explode' && !explodeAction) {
-    explodeT += (0 - explodeT) * Math.min(1, dt * 5);
-    if (explodeT < 0.003) explodeT = 0;
-  }
-  if (explodeAction) {
-    explodeAction.mixer.update(dt);
-    explodeT = explodeAction.clip.duration ? explodeAction.action.time / explodeAction.clip.duration : 0;
-  }
+  if (mixer) mixer.update(dt);
 
-  if (mode === 'assemble' && assembleLerp < 1) {
-    assembleLerp = Math.min(1, assembleLerp + dt * (1000 / animMs));
-    if (assembleLerp >= 1) updateAssembleUI();
+  if (hasClips()) {
+    if (mode === 'explode' && currentAction && currentClipName === 'explode') {
+      const d = currentAction.getClip().duration;
+      explodeT = d ? Math.min(1, currentAction.time / d) : 1;
+      if (currentAction.paused || !currentAction.isRunning()) explodeT = 1;
+    } else if (mode !== 'explode') {
+      explodeT = 0;
+    }
+    if (mode === 'assemble' && assembleStep < 25 && currentAction && currentClipName && currentClipName.startsWith('assemble_')) {
+      const d = currentAction.getClip().duration;
+      assembleLerp = d ? Math.min(1, currentAction.time / d) : 1;
+      if (currentAction.paused || !currentAction.isRunning()) assembleLerp = 1;
+      if (assembleLerp >= 1) updateAssembleUI();
+    } else if (mode === 'assemble' && assembleStep >= 25) {
+      assembleLerp = 1;
+    }
+  } else {
+    if (mode === 'explode') {
+      const spd = 1.6;
+      explodeT += (explodeTarget - explodeT) * Math.min(1, dt * spd * 3);
+      if (Math.abs(explodeTarget - explodeT) < 0.003) explodeT = explodeTarget;
+    } else {
+      explodeT += (0 - explodeT) * Math.min(1, dt * 5);
+      if (explodeT < 0.003) explodeT = 0;
+    }
+    if (mode === 'assemble' && assembleLerp < 1) {
+      assembleLerp = Math.min(1, assembleLerp + dt * (1000 / animMs));
+      if (assembleLerp >= 1) updateAssembleUI();
+    }
   }
 
   applyPoses();
@@ -1014,7 +1161,16 @@ window.__c204 = {
   roots: ROOTS,
   get mode() { return mode; },
   setMode,
-  get explode() { return { lerp: +explodeT.toFixed(3), target: explodeTarget, clip: !!(explodeAction && explodeAction.clip) }; },
+  get explode() { return { lerp: +explodeT.toFixed(3), target: explodeTarget, clip: !!clipMap['explode'], current: currentClipName }; },
+  get clips() {
+    const names = Object.keys(clipMap).sort();
+    return { names, count: names.length, current: currentClipName, loop: !!(currentAction && currentAction.loop === THREE.LoopRepeat) };
+  },
+  playClip, openLid, restoreRest,
+  get missingParts() {
+    if (!unitRoot) return BOM.map(b => b.id);
+    return BOM.filter(b => !b.nodes.some(n => unitRoot.getObjectByName(n))).map(b => ({ id: b.id, nodes: b.nodes }));
+  },
   get assemble() {
     const a = ASSEMBLY[assembleStep - 1];
     return { step: assembleStep, total: ASSEMBLY.length, id: a?.id ?? null, title: a?.title ?? '', lerp: +assembleLerp.toFixed(3), banner: $('#asmBanner')?.textContent || '', hidden: $('#assemble').classList.contains('hidden') };

@@ -1,8 +1,8 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/?v=d6a536d
+- Lien jouable : https://passcool17.github.io/c204-2026/
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.1 provisoire** — modèles en primitives Three.js. Les GLB finaux de la chaîne 3D (Modélisation → Rig → Rendu) se brancheront via `assets/model.json`, sans changer les noms de nœuds.
+- État : **v0.2.0** — unité en GLB final (`assets/c204-2026.glb`, Draco + WebP, 28 clips). Voiture encore en primitives. Repli primitives si le chargement du GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
@@ -16,8 +16,8 @@
 ## Ressources
 
 - Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader, KTX2Loader (transcodeurs jsDelivr).
-- Modèles v0.1 : primitives faites en code (aucune texture externe, aucun logo ni marque). Licence : originale, propriété de Pascal.
-- GLB finaux (plus tard) : `/workspace/assets3d/c204-2026/`, source et licence à reporter depuis le MANIFEST.md de la chaîne 3D.
+- Modèles : unité GLB finale faite par la chaîne 3D de Pascal (Modélisation → Rig → Rendu), propre au projet, licence originale. Voiture : primitives provisoires (aucune marque). Repli primitives pour l'unité si le GLB manque.
+- GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips). Source et détails : `/workspace/assets3d/c204-2026/MANIFEST.md`. La Lexus n'est pas encore exportée.
 - Textes : inspirés du récit publié par John Titor (2000-2001) et du manuel associé (document fictif, non vérifié) ; modernisation 2026 clairement présentée comme fictive. Aucun schéma électronique réel, aucune instruction dangereuse.
 
 ## Noms de nœuds attendus (GLB finaux)
@@ -55,7 +55,7 @@ Même forme générale que la C204 d'origine, plus compacte : **0,72 × 0,32 × 
 | `control_computer` | Ordinateur de contrôle |
 | `battery_pack` | Batterie |
 
-Actions GLB prévues, à brancher plus tard : `idle`, `explode` (remplacera l'interpolation écrite dans le code). Pas d'autre action exigée pour v0.1.
+Actions GLB branchées (28 clips, un seul `AnimationMixer`) : `idle` (4 s, boucle, au repos), `lid_open` (1 s, ouvrir le couvercle), `explode` (2 s, vue éclatée), `assemble_01`…`assemble_24` (1,5 s, étapes 1–24), `assemble_all` (8 s). LoopOnce + clampWhenFinished pour tout sauf `idle`. L'étape 25 (vue d'ensemble) revient à la pose finale + `idle`. Si un clip manque, repli sur l'interpolation. Les nœuds sont trouvés par `getObjectByName`, sans supposer qu'ils sont tous enfants directs de la racine (l'écran est enfant du couvercle).
 
 ### Voiture — racine `lexus_lc_root`
 
@@ -83,7 +83,9 @@ Silhouette de cabriolet générique, **sans aucun logo ni marque** (pas d'emblè
 | `mirror_l` `mirror_r` | Rétroviseurs (comptent dans la largeur 1,92 m) |
 | **`c204_2026_unit`** | **Point d'ancrage** : groupe vide à l'arrière côté passager (−X, −Z). L'unité (`c204_2026_root`) est enfant de ce nœud. |
 
-Position provisoire de `c204_2026_unit` (espace `lexus_lc_root`) : **x = −0,38 m, y = 0,30 m, z = −0,92 m** (avant en +Z, donc côté passager = −X, conducteur à gauche = +X), rotation 0. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
+Position actuelle de `c204_2026_unit` (voiture provisoire, espace `lexus_lc_root`) : **x = −0,38 m, y = 0,30 m, z = −0,92 m** (avant en +Z, donc côté passager = −X, conducteur à gauche = +X), rotation 0. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
+
+**Ancre exacte de la Lexus finale** (quand son GLB arrivera) : **(−0,33 ; 0,2981 ; −0,88)**. Utiliser alors le nœud `c204_2026_unit` du GLB, ou cette valeur, et mettre à jour le test d'ancrage.
 
 Dans l'app : si les deux GLB sont présents, on charge la voiture, on cherche `c204_2026_unit`, et on y place `c204_2026_root` (sauf si l'unité est déjà enfant de ce nœud). Si un GLB est absent (`url` null ou fichier manquant), repli sur les primitives du même nom.
 
@@ -140,8 +142,16 @@ Quand les GLB sont livrés : copier les fichiers dans `assets/` et mettre `url` 
 - Tests Playwright : `/workspace/games3d/c204-2026-tests/t01.js`, 412×915 et 915×412, 54 assertions, 0 échec, 0 erreur console, 0 réponse 404. Captures : `/workspace/games3d/c204-2026-v01.png` (vue) et `c204-2026-v01-assemblage.png` (étape 10).
 - Fps réel du S20 et Safari non mesurés (la box rend en logiciel).
 
+## v0.2.0 — 11 nov. 2026
+
+- Unité GLB branchée : `assets/c204-2026.glb` (chaîne 3D de Pascal, propre au projet). `assets/model.json` a `unit.url = "assets/c204-2026.glb"`. Voiture toujours provisoire. Repli primitives si le chargement échoue.
+- 28 clips du GLB remplacent l'interpolation : `idle` au repos, `lid_open`, `explode`, `assemble_NN` pour les étapes 1–24, pose finale + `idle` à l'étape 25. Un seul mixer, arrêt/reprise propres, LoopOnce + clampWhenFinished sauf `idle`.
+- Ancrage actuel (voiture provisoire) : (−0,38 ; 0,30 ; −0,92), côté passager −X. Échelle du GLB déjà conforme (≈ 0,36 × 0,27 × 0,73 m, avant +Z) — pas de correction. L'ancre exacte de la Lexus finale sera (−0,33 ; 0,2981 ; −0,88).
+- Tests Playwright : `/workspace/games3d/c204-2026-tests/t01.js` et `t02.js`, 412×915 et 915×412. Captures : `/workspace/games3d/c204-2026-v02.png` (vue, portrait) et `c204-2026-v02-eclate.png`.
+- Fps réel du S20 et Safari non mesurés (la box rend en logiciel).
+
 ## Prochaines étapes
 
-- Brancher les GLB finaux (mêmes noms de nœuds) et, s'il est fourni, le clip `explode`.
+- Brancher le GLB de la Lexus (quand Rendu le livrera) sur l'ancre (−0,33 ; 0,2981 ; −0,88) et les actions prévues (`idle`, `doors_open`, `wheels_roll`).
 - Ajouter plus tard le lien retour depuis titor-c204 (dépôt actuellement en pause).
-- Test QA sur le Galaxy S20 de Pascal (fps, tactile, son si on en ajoute). Safari et verrouillage d'orientation non testés.
+- Test QA sur le Galaxy S20 de Pascal (fps, tactile). Safari et verrouillage d'orientation non testés.

@@ -4,10 +4,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.3';
+} from './data.js?v=0.31';
 
 const $ = (s, r = document) => r.querySelector(s);
 const canvas = $('#c');
@@ -16,6 +17,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.45;
+renderer.shadowMap.enabled = false;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1c2833);
@@ -34,9 +36,11 @@ camera.position.set(4.05, 3.15, -3.55);
 scene.add(new THREE.HemisphereLight(0xd0e4f6, 0x3a3228, 1.15));
 const sun = new THREE.DirectionalLight(0xfff2dc, 2.35);
 sun.position.set(3.5, 7, 2.5);
+sun.castShadow = false;
 scene.add(sun);
 const fill = new THREE.DirectionalLight(0xb8d0ff, 0.7);
 fill.position.set(5, 3, -4);
+fill.castShadow = false;
 scene.add(fill);
 
 const ground = new THREE.Mesh(
@@ -718,6 +722,135 @@ function fitUnit(root, target) {
   if (s < 0.8 || s > 1.25) root.scale.multiplyScalar(s);
 }
 
+/* ---------- Optimisations Lexus au chargement (pas de ré-export) ---------- */
+const CAR_CLIP_ROOTS = ['door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'];
+// capote basculée en Éclatée / Assemblage ; capote fermée déjà masquée.
+const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', ...CAR_CLIP_ROOTS]);
+
+function isTransmissionMat(m) {
+  return !!(m && (m.transmission > 0 || (m.isMeshPhysicalMaterial && m.transmission > 0)));
+}
+
+function cheapGlassFrom(mat) {
+  const color = mat.color ? mat.color.clone() : new THREE.Color(0x000000);
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: mat.roughness != null ? mat.roughness : 0.08,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false,
+    side: THREE.FrontSide,
+  });
+}
+
+function replaceTransmissionMaterials(root) {
+  const cache = new Map();
+  root.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const multi = Array.isArray(o.material);
+    const mats = multi ? o.material : [o.material];
+    let changed = false;
+    const next = mats.map(m => {
+      if (!isTransmissionMat(m)) return m;
+      if (!cache.has(m)) cache.set(m, cheapGlassFrom(m));
+      changed = true;
+      return cache.get(m);
+    });
+    if (changed) o.material = multi ? next : next[0];
+  });
+}
+
+function setOpaqueFrontSide(root, doubleSideNames = new Set()) {
+  root.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const multi = Array.isArray(o.material);
+    const mats = multi ? o.material : [o.material];
+    const next = mats.map(m => {
+      if (!m || m.transparent || isTransmissionMat(m)) return m;
+      if (doubleSideNames.has(o.name)) {
+        if (m.side === THREE.DoubleSide) return m;
+        const clone = m.clone();
+        clone.side = THREE.DoubleSide;
+        return clone;
+      }
+      m.side = THREE.FrontSide;
+      return m;
+    });
+    if (next.some((m, i) => m !== mats[i])) o.material = multi ? next : next[0];
+  });
+}
+
+function collectProtected(carRoot) {
+  const set = new Set();
+  for (const name of CAR_KEEP_SEPARATE) {
+    const o = carRoot.getObjectByName(name);
+    if (!o) continue;
+    o.traverse(c => set.add(c));
+  }
+  return set;
+}
+
+function mergeStaticAtlasMeshes(carRoot) {
+  const protectedSet = collectProtected(carRoot);
+  carRoot.updateWorldMatrix(true, true);
+  const rootInv = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
+  const bake = new THREE.Matrix4();
+  const groups = new Map();
+  carRoot.traverse(o => {
+    if (!o.isMesh || !o.geometry || !o.visible) return;
+    if (protectedSet.has(o)) return;
+    const mat = o.material;
+    if (!mat || Array.isArray(mat)) return;
+    if (mat.transparent || isTransmissionMat(mat)) return;
+    let g = groups.get(mat.uuid);
+    if (!g) { g = { mat, meshes: [] }; groups.set(mat.uuid, g); }
+    g.meshes.push(o);
+  });
+  for (const { mat, meshes } of groups.values()) {
+    if (meshes.length < 2) continue;
+    const geos = [];
+    for (const mesh of meshes) {
+      const geo = mesh.geometry.clone();
+      bake.multiplyMatrices(rootInv, mesh.matrixWorld);
+      geo.applyMatrix4(bake);
+      geos.push(geo);
+    }
+    let merged = null;
+    try { merged = mergeGeometries(geos, false); }
+    catch { merged = null; }
+    geos.forEach(g => g.dispose());
+    if (!merged) continue;
+    const out = new THREE.Mesh(merged, mat);
+    out.name = 'lexus_atlas_merged';
+    out.castShadow = false;
+    out.receiveShadow = false;
+    carRoot.add(out);
+    for (const mesh of meshes) {
+      mesh.visible = false;
+      mesh.castShadow = false;
+      mesh.receiveShadow = false;
+    }
+  }
+}
+
+function optimizeCarModel(carRoot) {
+  if (!carRoot) return;
+  replaceTransmissionMaterials(carRoot);
+  setOpaqueFrontSide(carRoot);
+  mergeStaticAtlasMeshes(carRoot);
+}
+
+function sceneHasTransmission() {
+  let found = false;
+  scene.traverse(o => {
+    if (found || !o.isMesh || !o.material) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    if (mats.some(isTransmissionMat)) found = true;
+  });
+  return found;
+}
+
 async function boot() {
   const cfg = await loadConfig();
   carRoot = buildCar();
@@ -744,6 +877,7 @@ async function boot() {
     if (hiddenTop) hiddenTop.visible = false;
   }
   scene.add(carRoot);
+  if (source.car === 'glb') optimizeCarModel(carRoot);
   mountNode = carRoot.getObjectByName(ROOTS.mount) || carRoot.getObjectByName(cfg.car?.mount || ROOTS.mount);
   if (!mountNode) {
     mountNode = new THREE.Group();
@@ -780,6 +914,7 @@ async function boot() {
   const unitLit = new THREE.PointLight(0x8affe0, 0.28, 1.5, 2);
   unitLit.name = 'unit_light';
   unitLit.position.set(0, 0.35, 0.1);
+  unitLit.castShadow = false;
   unitRoot.add(unitLit);
   buildPartsPanel();
   buildLabels();
@@ -1317,6 +1452,7 @@ window.__c204 = {
     const i = renderer.info;
     return { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, heapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null };
   },
+  get hasTransmission() { return sceneHasTransmission(); },
   camera, controls, renderer, scene,
   get unit() { return unitRoot; },
   get car() { return carRoot; },

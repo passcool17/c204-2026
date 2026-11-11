@@ -1,8 +1,8 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/?v=4ddbe96
+- Lien jouable : https://passcool17.github.io/c204-2026/ (sha à jour après publication)
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.3.0** — unité et voiture en GLB finaux (`assets/c204-2026.glb`, `assets/lexus-lc.glb`, Draco + WebP). Repli primitives si le chargement d'un GLB échoue.
+- État : **v0.3.1** — mêmes GLB que la v0.3.0, optimisations au chargement (verre simple, FrontSide, fusion des meshes opaques statiques). Repli primitives si le chargement d'un GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
@@ -159,6 +159,23 @@ Les deux GLB sont branchés (`url` égal à `path`). Laisser `url` à `null` év
 - Hors-tout visible : 4,771 × 2,10 × 1,341 m (rétros compris dans la largeur). verify-glb : 0 erreur de validation, 0 erreur console, `doors_open` et `wheels_roll` bougent ; `idle` ne déplace rien (pose fixe acceptée, seul motif du FAIL).
 - Tests Playwright locaux : t01.js 70/70, t02.js 24 fiches en 915×412 et 412×915, 0 erreur console, 0 fiche sans nœud, 0 fiche sous la barre. Captures : `/workspace/games3d/c204-2026-v03.png` (vue, portrait 412×915) et `c204-2026-v03-eclate.png` (vue éclatée).
 - Fps indicatifs (SwiftShader, pas le S20) : portrait 412×915 Vue 4,8 / Éclatée 4,9 ; paysage 915×412 Vue 6,2 / Éclatée 4,8. Plus bas qu'en v0.2.0 (beaucoup plus d'appels de rendu avec la Lexus). Fps réel du S20 et Safari non mesurés.
+
+## v0.3.1 — 11 nov. 2026
+
+- Pas de ré-export du GLB. Au chargement de la Lexus : le verre `KHR_materials_transmission` + IOR est remplacé par un `MeshStandardMaterial` transparent (opacité 0,35, `depthWrite` false, FrontSide, même teinte) ; les matériaux opaques passent en FrontSide (aucun trou visible, pas besoin de DoubleSide) ; les meshes opaques statiques qui partagent l'atlas sont fusionnés (`mergeGeometries`, transforms cuites dans `lexus_lc_root`). Portes, roues et leurs enfants, `c204_2026_unit` et `convertible_top` restent séparés (clips et masquage). `shadowMap` reste désactivé, `pixelRatio` plafonné à 2.
+- Différence visuelle avec la v0.3.0 : le pare-brise et les vitres sont un peu plus « plats » (plus de réfraction ni de second passage de transmission). Peinture, habitacle, unité et ancrage inchangés. Pas de trou.
+- Perf SwiftShader (indicatif, pas le S20), avant (v0.3.0 / QA) → après (v0.3.1) :
+
+| Vue | 412×915 | 915×412 | 1280×800 |
+|---|---|---|---|
+| Vue v0.3.0 | 5,1 · 221 appels · 31 130 tri | 6,4 · 231 appels · 32 218 tri | 2,8 · 231 appels · 32 218 tri |
+| Vue v0.3.1 | **22,3** · **86 appels** · **16 177 tri** | **27,8** · 86 appels · 16 177 tri | **14,1** · 86 appels · 16 177 tri |
+| Éclatée v0.3.0 | 4,2 · 157 appels | 3,8 · 181 appels | 2,0 · 185 appels |
+| Éclatée v0.3.1 | **13,9** · ~83 appels · 16 001 tri | **14,9** | **7,1** |
+| Vue v0.2.0 (réf.) | 33,1 · 116 appels · 5 424 tri | 50,4 | 21,1 |
+
+  Les appels de rendu sont sous le niveau v0.2.0 (86 < 116). Les fps remontent d'environ 4 à 5 fois par rapport à la v0.3.0, mais restent sous la v0.2.0 (22 vs 33 en Vue 412) : la Lexus a toujours plus de triangles (≈ 16 k soumis vs 5 424) et trois atlas WebP 1024. Fps réel du S20 non mesuré.
+- Tests Playwright : t01.js 81/81 (dont appels ≤ 140 et aucun matériau transmission), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console. Captures : `/workspace/games3d/c204-2026-v031.png` (vue, 412×915) et `c204-2026-v031-eclate.png`.
 
 ## Prochaines étapes
 

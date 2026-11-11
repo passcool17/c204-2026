@@ -1,5 +1,14 @@
 {
-  "unit": { "url": "assets/c204-2026.glb", "path": "assets/c204-2026.glb", "root": "c204_2026_root" },
-  "car":  { "url": null, "path": "assets/lexus-lc.glb",  "root": "lexus_lc_root", "mount": "c204_2026_unit" },
+  "unit": {
+    "url": "assets/c204-2026.glb",
+    "path": "assets/c204-2026.glb",
+    "root": "c204_2026_root"
+  },
+  "car": {
+    "url": "assets/lexus-lc.glb",
+    "path": "assets/lexus-lc.glb",
+    "root": "lexus_lc_root",
+    "mount": "c204_2026_unit"
+  },
   "note": "Quand les GLB finaux arrivent, copier les fichiers dans assets/ et mettre url égal à path. url null = primitives, sans requête 404."
 }

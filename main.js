@@ -7,7 +7,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.2';
+} from './data.js?v=0.3';
 
 const $ = (s, r = document) => r.querySelector(s);
 const canvas = $('#c');
@@ -62,7 +62,9 @@ const _q2 = new THREE.Quaternion();
 let unitRoot = null, carRoot = null, mountNode = null;
 let source = { unit: 'procedural', car: 'procedural' };
 let mixer = null, clipMap = {}, currentAction = null, currentClipName = null;
+let carMixer = null, carClipMap = {}, currentCarAction = null, currentCarClipName = null;
 const restPoses = [];
+const carRestPoses = [];
 let mode = 'view';
 let explodeT = 0, explodeTarget = 0;
 let assembleStep = 1, assembleLerp = 1, animMs = 450;
@@ -634,6 +636,77 @@ function hasClips() {
   return source.unit === 'glb' && !!mixer && Object.keys(clipMap).length > 0;
 }
 
+function snapshotCarRest(root) {
+  carRestPoses.length = 0;
+  if (!root) return;
+  root.traverse(o => {
+    if (o === root) return;
+    carRestPoses.push({
+      obj: o,
+      pos: o.position.clone(),
+      quat: o.quaternion.clone(),
+      scale: o.scale.clone(),
+    });
+  });
+}
+
+function restoreCarRest() {
+  for (const r of carRestPoses) {
+    r.obj.position.copy(r.pos);
+    r.obj.quaternion.copy(r.quat);
+    r.obj.scale.copy(r.scale);
+  }
+}
+
+function setupCarMixer(root, animations) {
+  carMixer = new THREE.AnimationMixer(root);
+  carClipMap = {};
+  for (const c of animations || []) if (c?.name) carClipMap[c.name] = c;
+  currentCarAction = null;
+  currentCarClipName = null;
+}
+
+function playCarClip(name, { loop = false, instant = false } = {}) {
+  if (!carMixer || !carClipMap[name]) return false;
+  restoreCarRest();
+  carMixer.stopAllAction();
+  const clip = carClipMap[name];
+  const action = carMixer.clipAction(clip);
+  action.enabled = true;
+  action.weight = 1;
+  if (loop) {
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.clampWhenFinished = false;
+  } else {
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+  }
+  action.paused = false;
+  action.timeScale = 1;
+  action.reset();
+  if (instant && !loop) {
+    action.time = clip.duration;
+    action.play();
+    action.paused = true;
+    carMixer.update(0);
+  } else {
+    action.play();
+  }
+  currentCarAction = action;
+  currentCarClipName = name;
+  return true;
+}
+
+function hasCarClips() {
+  return source.car === 'glb' && !!carMixer && Object.keys(carClipMap).length > 0;
+}
+
+function syncCarClip() {
+  if (!hasCarClips()) return;
+  if (mode === 'view') playCarClip('wheels_roll', { loop: false });
+  else playCarClip('doors_open', { loop: false });
+}
+
 function fitUnit(root, target) {
   root.updateWorldMatrix(true, true);
   const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
@@ -665,6 +738,10 @@ async function boot() {
     const found = gCar.scene.getObjectByName(ROOTS.car) || gCar.scene.getObjectByName(cfg.car?.root || ROOTS.car) || gCar.scene;
     carRoot = found;
     source.car = 'glb';
+    setupCarMixer(carRoot, gCar.animations);
+    snapshotCarRest(carRoot);
+    const hiddenTop = carRoot.getObjectByName('soft_top_closed');
+    if (hiddenTop) hiddenTop.visible = false;
   }
   scene.add(carRoot);
   mountNode = carRoot.getObjectByName(ROOTS.mount) || carRoot.getObjectByName(cfg.car?.mount || ROOTS.mount);
@@ -691,9 +768,13 @@ async function boot() {
   const already = mountNode.getObjectByName(ROOTS.unit);
   if (already && already !== unitRoot) mountNode.remove(already);
   if (unitRoot.parent !== mountNode) mountNode.add(unitRoot);
+  // Ancre = nœud c204_2026_unit (pas MOUNT_POS, sauf repli procédural plus haut).
+  unitRoot.position.set(0, 0, 0);
+  unitRoot.quaternion.identity();
 
   registerParts(unitRoot);
   if (hasClips()) playClip('idle', { loop: true });
+  if (hasCarClips()) syncCarClip();
   applyPoses();
   // Petite lumière sur l'unité, pour la voir dans l'habitacle (S20 : une seule, pas d'ombre).
   const unitLit = new THREE.PointLight(0x8affe0, 0.28, 1.5, 2);
@@ -781,6 +862,7 @@ function setMode(m) {
       playClip('idle', { loop: true });
     }
   }
+  if (hasCarClips()) syncCarClip();
   applyPoses();
 }
 
@@ -1078,6 +1160,7 @@ function tick() {
   const t = clock.elapsedTime;
 
   if (mixer) mixer.update(dt);
+  if (carMixer) carMixer.update(dt);
 
   if (hasClips()) {
     if (mode === 'explode' && currentAction && currentClipName === 'explode') {
@@ -1147,10 +1230,16 @@ function sizes() {
   const car = new THREE.Box3().setFromObject(carRoot);
   const us = unit.getSize(new THREE.Vector3());
   const cs = car.getSize(new THREE.Vector3());
+  if (mountNode) mountNode.updateWorldMatrix(true, true);
+  if (unitRoot) unitRoot.updateWorldMatrix(true, true);
+  const mw = mountNode ? mountNode.getWorldPosition(new THREE.Vector3()) : null;
+  const uw = unitRoot ? unitRoot.getWorldPosition(new THREE.Vector3()) : null;
   return {
     unit: { x: +us.x.toFixed(3), y: +us.y.toFixed(3), z: +us.z.toFixed(3) },
     car: { x: +cs.x.toFixed(3), y: +cs.y.toFixed(3), z: +cs.z.toFixed(3) },
-    mount: mountNode ? { x: +mountNode.position.x.toFixed(3), y: +mountNode.position.y.toFixed(3), z: +mountNode.position.z.toFixed(3) } : null,
+    mount: mountNode ? { x: +mountNode.position.x.toFixed(4), y: +mountNode.position.y.toFixed(4), z: +mountNode.position.z.toFixed(4) } : null,
+    mountWorld: mw ? { x: +mw.x.toFixed(4), y: +mw.y.toFixed(4), z: +mw.z.toFixed(4) } : null,
+    unitWorld: uw ? { x: +uw.x.toFixed(4), y: +uw.y.toFixed(4), z: +uw.z.toFixed(4) } : null,
   };
 }
 
@@ -1167,6 +1256,11 @@ window.__c204 = {
     return { names, count: names.length, current: currentClipName, loop: !!(currentAction && currentAction.loop === THREE.LoopRepeat) };
   },
   playClip, openLid, restoreRest,
+  get carClips() {
+    const names = Object.keys(carClipMap).sort();
+    return { names, count: names.length, current: currentCarClipName, loop: !!(currentCarAction && currentCarAction.loop === THREE.LoopRepeat) };
+  },
+  playCarClip,
   get missingParts() {
     if (!unitRoot) return BOM.map(b => b.id);
     return BOM.filter(b => !b.nodes.some(n => unitRoot.getObjectByName(n))).map(b => ({ id: b.id, nodes: b.nodes }));

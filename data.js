@@ -2,7 +2,7 @@
 // (document fictif, non vérifié). Aucune machine réelle de ce type
 // n'a été démontrée. Le guide d'assemblage n'est pas un vrai plan.
 
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 
 export const FRAME =
   'Version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n\'a été démontrée.';
@@ -15,6 +15,7 @@ export const ROOTS = {
 
 export const UNIT_SIZE = { l: 0.72, w: 0.32, h: 0.26 };
 export const CAR_SIZE = { l: 4.77, w: 1.92, h: 1.35, wb: 2.87 };
+// Repli uniquement : voiture procédurale. La Lexus GLB utilise le nœud c204_2026_unit.
 export const MOUNT_POS = { x: -0.38, y: 0.30, z: -0.92 };
 
 export const PARTS = {

@@ -74,14 +74,14 @@ Silhouette de cabriolet générique, **sans aucun logo ni marque** (pas d'emblè
 | `convertible_top` | Capote repliée (à l'arrière) |
 | `dashboard` | Tableau de bord (générique, sans marque) |
 | `steering_wheel` | Volant (à gauche, conduite Canada) |
-| `seat_driver` | Siège conducteur (gauche, −X) |
-| `seat_passenger` | Siège passager (droite, +X) |
+| `seat_driver` | Siège conducteur (gauche, +X) |
+| `seat_passenger` | Siège passager (droite, −X) |
 | `seat_rear_driver` | Banquette arrière côté conducteur |
 | `wheel_fl` `wheel_fr` `wheel_rl` `wheel_rr` | Roues (avant gauche, avant droite, arrière gauche, arrière droite) |
 | `headlight_l` `headlight_r` | Projecteurs |
 | `taillight_l` `taillight_r` | Feux arrière |
 | `mirror_l` `mirror_r` | Rétroviseurs (comptent dans la largeur 1,92 m) |
-| **`c204_2026_unit`** | **Point d'ancrage** : groupe vide à l'arrière côté passager (+X, −Z). L'unité (`c204_2026_root`) est enfant de ce nœud. |
+| **`c204_2026_unit`** | **Point d'ancrage** : groupe vide à l'arrière côté passager (−X, −Z). L'unité (`c204_2026_root`) est enfant de ce nœud. |
 
 Position provisoire de `c204_2026_unit` (espace `lexus_lc_root`) : **x = −0,38 m, y = 0,30 m, z = −0,92 m** (avant en +Z, donc côté passager = −X, conducteur à gauche = +X), rotation 0. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
 

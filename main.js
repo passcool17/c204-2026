@@ -1072,3 +1072,36 @@ window.__c204 = {
   get car() { return carRoot; },
   pickAt,
 };
+
+// Hauteur réelle de la barre des modes + indice « suite plus bas »
+(() => {
+  const bar = document.getElementById('bar');
+  const root = document.documentElement;
+  const setH = () => { if (bar) root.style.setProperty('--barH', Math.ceil(bar.getBoundingClientRect().height) + 'px'); };
+  setH();
+  if (bar && 'ResizeObserver' in window) new ResizeObserver(setH).observe(bar);
+  addEventListener('resize', setH);
+  const hint = document.createElement('div');
+  hint.id = 'moreHint'; hint.className = 'hidden'; hint.textContent = '▼ suite plus bas';
+  document.body.appendChild(hint);
+  const panels = ['sheet', 'parts'].map(id => document.getElementById(id)).filter(Boolean);
+  const check = () => {
+    let shown = null;
+    for (const el of panels) {
+      const visible = !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none';
+      const more = visible && el.scrollHeight - el.clientHeight - el.scrollTop > 8;
+      el.classList.toggle('more', more);
+      if (more) shown = el;
+    }
+    if (shown) {
+      const r = shown.getBoundingClientRect();
+      hint.style.left = (r.left + r.width / 2 - 60) + 'px';
+      hint.style.top = (r.bottom - 26) + 'px';
+      hint.classList.remove('hidden');
+    } else hint.classList.add('hidden');
+  };
+  panels.forEach(el => el.addEventListener('scroll', check, { passive: true }));
+  if ('MutationObserver' in window) panels.forEach(el => new MutationObserver(check).observe(el, { attributes: true, childList: true, subtree: true }));
+  addEventListener('resize', check);
+  setInterval(check, 500);
+})();

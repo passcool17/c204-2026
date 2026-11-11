@@ -56,8 +56,13 @@ button.on,a.txt.on{background:#10332a;border-color:#3affc8;color:#b8ffe8}
   #hint{top:calc(env(safe-area-inset-top) + 54px);font-size:11px}
   #bar{padding-top:4px;padding-bottom:calc(env(safe-area-inset-bottom) + 4px)}
   #bar button{flex-direction:row;justify-content:center;gap:6px;min-height:44px}
-  #assemble{left:auto;right:8px;top:calc(env(safe-area-inset-top) + 54px);bottom:calc(env(safe-area-inset-bottom) + 58px);width:min(340px,46vw);max-width:none;display:flex;flex-direction:column}
+  #assemble{left:auto;right:8px;top:calc(env(safe-area-inset-top) + 54px);bottom:calc(var(--barH,64px) + 8px);width:min(340px,46vw);max-width:none;display:flex;flex-direction:column}
   #assemble.hidden{display:none}
   #asmBody{flex:1;overflow:auto}
-  #sheet{left:auto;right:8px;width:min(400px,48vw);top:calc(env(safe-area-inset-top) + 54px);bottom:calc(env(safe-area-inset-bottom) + 58px);max-height:none}
+  #sheet{left:auto;right:8px;width:min(400px,48vw);top:calc(env(safe-area-inset-top) + 54px);bottom:calc(var(--barH,64px) + 8px);max-height:none}
 }
+
+/* indice de défilement */
+#sheet.more,#parts.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}
+#moreHint{position:fixed;z-index:26;pointer-events:none;font-size:12px;color:#9fe;background:#0b1118e6;border:1px solid #2a3d4a;border-radius:12px;padding:2px 10px}
+#moreHint.hidden{display:none}

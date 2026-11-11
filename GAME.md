@@ -1,6 +1,6 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/
+- Lien jouable : https://passcool17.github.io/c204-2026/?v=6d40467
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
 - État : **v0.2.0** — unité en GLB final (`assets/c204-2026.glb`, Draco + WebP, 28 clips). Voiture encore en primitives. Repli primitives si le chargement du GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
@@ -147,7 +147,7 @@ Quand les GLB sont livrés : copier les fichiers dans `assets/` et mettre `url` 
 - Unité GLB branchée : `assets/c204-2026.glb` (chaîne 3D de Pascal, propre au projet). `assets/model.json` a `unit.url = "assets/c204-2026.glb"`. Voiture toujours provisoire. Repli primitives si le chargement échoue.
 - 28 clips du GLB remplacent l'interpolation : `idle` au repos, `lid_open`, `explode`, `assemble_NN` pour les étapes 1–24, pose finale + `idle` à l'étape 25. Un seul mixer, arrêt/reprise propres, LoopOnce + clampWhenFinished sauf `idle`.
 - Ancrage actuel (voiture provisoire) : (−0,38 ; 0,30 ; −0,92), côté passager −X. Échelle du GLB déjà conforme (≈ 0,36 × 0,27 × 0,73 m, avant +Z) — pas de correction. L'ancre exacte de la Lexus finale sera (−0,33 ; 0,2981 ; −0,88).
-- Tests Playwright : `/workspace/games3d/c204-2026-tests/t01.js` et `t02.js`, 412×915 et 915×412. Captures : `/workspace/games3d/c204-2026-v02.png` (vue, portrait) et `c204-2026-v02-eclate.png`.
+- Tests Playwright locaux : t01.js 60/60, t02.js 24 fiches en 915×412 et 412×915, 0 erreur console, 0 fiche sans nœud, 0 fiche sous la barre. Captures : `/workspace/games3d/c204-2026-v02.png` (vue, portrait 412×915) et `c204-2026-v02-eclate.png` (vue éclatée).
 - Fps réel du S20 et Safari non mesurés (la box rend en logiciel).
 
 ## Prochaines étapes

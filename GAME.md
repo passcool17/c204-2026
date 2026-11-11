@@ -1,6 +1,6 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/ (sha à jour après publication)
+- Lien jouable : https://passcool17.github.io/c204-2026/?v=5580728
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
 - État : **v0.3.1** — mêmes GLB que la v0.3.0, optimisations au chargement (verre simple, FrontSide, fusion des meshes opaques statiques). Repli primitives si le chargement d'un GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).

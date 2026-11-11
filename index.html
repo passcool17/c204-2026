@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07090d">
+<meta name="description" content="C204 · 2026 : simulation 3D d'une unité fictive modernisée, inspirée du récit de John Titor (document fictif, non vérifié).">
+<title>C204 · 2026 — unité fictive modernisée</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%233affc8%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=0.1">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<header id="top">
+  <div class="ttl">
+    <b id="ttlMain">C204 · 2026</b>
+    <span id="ttlSub">Unité fictive modernisée · cabriolet générique</span>
+  </div>
+  <div id="topBtns">
+    <button id="bParts" class="txt" aria-label="Liste des pièces">Pièces</button>
+    <button id="bLabels" class="txt" aria-label="Étiquettes des pièces" aria-pressed="false">Étiquettes</button>
+    <a id="bOrig" class="txt" href="https://passcool17.github.io/titor-c204/" target="_blank" rel="noopener noreferrer">C204 2001</a>
+    <button id="bFull" class="ico" aria-label="Plein écran">⛶</button>
+  </div>
+</header>
+<div id="hint">Touche une pièce pour sa fiche · glisse pour tourner · pince pour zoomer</div>
+
+<section id="sheet" class="hidden">
+  <button class="close" data-close="sheet" aria-label="Fermer">✕</button>
+  <div id="shRef"></div>
+  <h2 id="shTitle"></h2>
+  <div id="shEn"></div>
+  <p id="shBody"></p>
+  <p id="shFrame"></p>
+  <p id="shNote"></p>
+</section>
+
+<section id="parts" class="hidden"><div class="inner">
+  <button class="close" data-close="parts" aria-label="Fermer">✕</button>
+  <div id="partsContent"></div>
+</div></section>
+<div id="labels" hidden></div>
+
+<aside id="assemble" class="hidden" aria-label="Assemblage à la maison">
+  <p id="asmBanner">Guide fictif — pas un vrai plan</p>
+  <h3 id="asmTitle"></h3>
+  <p id="asmBody"></p>
+  <div id="asmNav">
+    <button id="bPrev" aria-label="Étape précédente">◀ Précédent</button>
+    <span id="asmPos"></span>
+    <button id="bNext" aria-label="Étape suivante">Suivant ▶</button>
+  </div>
+</aside>
+
+<nav id="bar">
+  <button id="bView" class="on" aria-pressed="true"><span>Vue</span></button>
+  <button id="bExplode" aria-pressed="false">⇱<span>Éclatée</span></button>
+  <button id="bAssemble" aria-pressed="false">🔧<span>Assemblage</span></button>
+</nav>
+<div id="loading">Chargement de C204 · 2026…</div>
+<script type="module" src="main.js?v=0.1"></script>
+</body>
+</html>

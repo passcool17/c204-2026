@@ -1,8 +1,8 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/?v=7c75076
+- Lien jouable (version en ligne, **v0.4.1**) : https://passcool17.github.io/c204-2026/?v=7c75076
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.4.1** — Lexus GLB v4.6 (chaîne 3D, modèle original) : verre alpha 0,4 revenu (`windshield`, `window_left`, `window_right`), pas de transmission. L'unité se voit dans l'habitacle en Vue. Budget < 100 appels respecté. Repli primitives si le chargement d'un GLB échoue.
+- État : **v0.5.0 locale, pas encore publiée** — Lexus GLB v5 (chaîne 3D, modèle original, peinture Structural Blue) : `gltfpack` meshopt + quantification + WebP, verre alpha 0,4 (`windshield`, `window_left`, `window_right`), pas de transmission. L'unité reste ancrée sur `c204_2026_unit` et se voit dans l'habitacle en Vue. Budget < 100 appels respecté (91 en Vue). Repli primitives si le chargement d'un GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
@@ -15,10 +15,10 @@
 
 ## Ressources
 
-- Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader, KTX2Loader (transcodeurs jsDelivr).
+- Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader, KTX2Loader (transcodeurs jsDelivr), MeshoptDecoder (compression meshopt du GLB v5).
 - Modèles : unité et voiture GLB finales, faites par la chaîne 3D de Pascal (Modélisation → Rig → Rendu), propre au projet, licence originale. Repli primitives si un GLB manque.
 - GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips).
-- GLB voiture : `assets/lexus-lc.glb` (v4.6, 193,4 Ko, 198 024 o, Draco + WebP, 28 663 triangles, 20 nœuds, 12 meshes, 3 clips : `idle`, `doors_open`, `wheels_roll`). Source : chaîne 3D de Pascal (Modélisation → Rig → Rendu), modèle original propre au projet. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
+- GLB voiture : `assets/lexus-lc.glb` (v5, 355,7 Ko, 364 260 o, `gltfpack -kn -km -ac -cc` = EXT_meshopt_compression + KHR_mesh_quantization + WebP 1024, 30 679 triangles, 16 appels voiture, 3 clips : `idle` 3,0 s, `doors_open` 1,2 s, `wheels_roll` 3,0 s). Nœuds : `lexus_lc_root`, `c204_2026_unit` (−0,33, 0,2981, −0,88), `body`, `door_L`, `door_R`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`, `window_left` (enfant de `door_L`), `window_right` (enfant de `door_R`), `windshield`, `soft_top_closed`, `convertible_top`, `interior`, `grille`, `steering_wheel`. Les meshes sont sur des enfants de quantification sans nom : `visible` sur le nœud nommé les masque encore. Source : chaîne 3D de Pascal (Modélisation → Rig → Rendu), modèle original propre au projet. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`. Sauvegarde v4.6 : `/tmp/lexus-lc.v46.glb`.
 - Textes : inspirés du récit publié par John Titor (2000-2001) et du manuel associé (document fictif, non vérifié) ; modernisation 2026 clairement présentée comme fictive. Aucun schéma électronique réel, aucune instruction dangereuse.
 
 ## Noms de nœuds attendus (GLB finaux)
@@ -234,7 +234,26 @@ Les deux GLB sont branchés (`url` égal à `path`). Laisser `url` à `null` év
   Budget respecté : 87 appels en Vue (< 100). Les 6 appels de plus qu'en v0.4.0 sont le verre (3 meshes, pass transparent). En Éclatée / Assemblage les vitres sont cachées, donc le même nombre d'appels qu'en v0.4.0 à 412. Fps du même ordre, un peu mieux en Vue 412 (caméra un peu plus haute, variance SwiftShader). Clearcoat conservé. Fps réel du S20 non mesuré.
 - Tests Playwright locaux : t01.js 81/81 (appels < 100 dans toutes les vues, aucun matériau transmission, 3 nœuds verre présents), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console. Captures : `/workspace/games3d/c204-2026-v041.png` (vue, portrait 412×915) et `c204-2026-v041-eclate.png` (vue éclatée).
 
+
+## v0.5.0 — 12 nov. 2026
+
+- Voiture GLB remplacée par la Lexus v5 (`assets/lexus-lc.glb`, 364 260 o), même chaîne 3D, modèle original, peinture **Structural Blue**. Unité inchangée. Compression : meshopt + quantification des maillages + textures WebP 1024 (plus de Draco sur ce fichier). 30 679 triangles, 16 appels voiture (10 `Lexus_Atlas_v5`, 1 `Shut_Occluder_Black`, 2 `Lexus_SoftTop_v5`, 3 `Lexus_Glass` alpha BLEND 0,4 DoubleSide, pas de transmission). `soft_top_closed` masqué au chargement (15 appels voiture visibles en Vue).
+- Les meshes sont des enfants sans nom des nœuds nommés (offset de quantification). `prepareCarGlass`, `setCarObstruction` et le masquage de `soft_top_closed` passent encore par le nœud nommé + parcours des descendants : le verre est transparent, `depthWrite` false, `renderOrder` 1 ; en Éclatée et Assemblage, `windshield`, `window_left`, `window_right` et `convertible_top` sont cachés. `grille` et `steering_wheel` sont dans `CAR_KEEP_SEPARATE` pour ne pas fusionner leurs meshes. Ancre `c204_2026_unit` identique (−0,33 ; 0,2981 ; −0,88) ; l'unité y est bien montée.
+- Peinture métallique + clearcoat : sans carte d'environnement, la caisse restait noire sous les seules lumières de la scène. Au chargement, un `RoomEnvironment` est cuit une fois (PMREM) et appliqué seulement aux matériaux de la voiture (`envMapIntensity` 0,55). Ce n'est pas un second passage de rendu par image. Ombres toujours désactivées.
+- verify-glb : 0 erreur de validation, 0 erreur console, bbox 2,16 × 1,35 × 4,76 m, 30 679 triangles. `doors_open` et `wheels_roll` bougent ; `idle` reste une pose fixe (seul motif du FAIL, accepté comme en v4.6).
+- Perf locale, `measure.mjs --gl angle-gl` (backend ANGLE/llvmpipe sur la box — les fps ne valent pas ceux du S20), portrait 412×915, 10 s par vue :
+
+| Vue | Appels | Triangles | Temps JS médian / p95 | Fps box (indicatif) |
+|---|---|---|---|---|
+| Vue | **91** | **33 031** | 0,6 / 1,1 ms | 36,3 |
+| Éclatée | **69** | **21 253** | 0,5 / 0,8 ms | 39,6 |
+| Assemblage | **69** | **21 253** | 0,5 / 1,8 ms | 27,0 |
+
+  Budget respecté : 91 appels en Vue (< 100), conforme à l'estimation de Rendu (87 − 12 + 16 = 91). 0 erreur console, pas de transmission. En Éclatée / Assemblage les vitres et la capote pliée visible sont cachées, d'où moins d'appels et de triangles. Fps réel du S20 non mesuré pour cette version (v0.4.1 : 59 fps sur Galaxy S20 FE).
+- Tests Playwright locaux : t01.js 81/81 (appels < 100 dans toutes les vues, aucun matériau transmission, nœuds verre et ancre OK), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console. Cette version n'a pas été poussée : le lien GitHub Pages reste la v0.4.1. Captures : `/workspace/games3d/c204-2026-v050.png` (vue, portrait 412×915), `c204-2026-v050-eclate.png` (vue éclatée), `c204-2026-v050-compare.png` (montage 3/4 avant, profil, 3/4 arrière vs photos dans `/workspace/assets3d/c204-2026/references/lc500/`).
+
 ## Prochaines étapes
 
+- Publier la v0.5.0 (push normal, pas de force-push) seulement après accord de Pascal, puis test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`).
 - Ajouter plus tard le lien retour depuis titor-c204 (dépôt actuellement en pause).
-- Test QA sur le Galaxy S20 de Pascal (fps, tactile). Safari et verrouillage d'orientation non testés.
+- Safari et verrouillage d'orientation non testés.

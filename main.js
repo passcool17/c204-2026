@@ -5,10 +5,11 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.31';
+} from './data.js?v=0.50';
 
 const $ = (s, r = document) => r.querySelector(s);
 const canvas = $('#c');
@@ -728,7 +729,7 @@ const CAR_CLIP_ROOTS = ['body', 'door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'whe
 // body est une cible d'animation (idle, pose fixe). convertible_top peut être
 // un nœud vide (géométrie fondue dans body) : le garder dans le Set reste
 // inoffensif et sert de repli pour un ancien GLB.
-const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', 'windshield', 'window_left', 'window_right', ...CAR_CLIP_ROOTS]);
+const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', 'windshield', 'window_left', 'window_right', 'grille', 'steering_wheel', ...CAR_CLIP_ROOTS]);
 
 function isTransmissionMat(m) {
   return !!(m && (m.transmission > 0 || (m.isMeshPhysicalMaterial && m.transmission > 0)));
@@ -796,8 +797,9 @@ function collectProtected(carRoot) {
 
 function mergeStaticAtlasMeshes(carRoot) {
   // Repli : ne fusionne un matériau que s'il reste au moins 2 meshes opaques
-  // non protégés. Sur le GLB v4.6 (déjà fusionné, verre à part), les pièces
-  // animées, le verre et soft_top_closed sont protégés : aucun merge.
+  // non protégés. Sur le GLB v5 (meshes sur enfants de quantification sans nom),
+  // collectProtected inclut déjà ces enfants. Pièces animées, verre,
+  // soft_top_closed, interior, grille et steering_wheel restent protégés : aucun merge.
   const protectedSet = collectProtected(carRoot);
   carRoot.updateWorldMatrix(true, true);
   const rootInv = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
@@ -860,12 +862,35 @@ function prepareCarGlass(root) {
   });
 }
 
+let carEnvMap = null;
+function applyCarEnvironment(carRoot) {
+  // Peinture Structural Blue (MeshPhysicalMaterial, métal + clearcoat) :
+  // sans carte d'environnement, la caisse reste noire. PMREM une seule fois
+  // au chargement, uniquement sur les matériaux de la voiture (pas l'unité).
+  if (!carEnvMap) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    carEnvMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+  }
+  carRoot.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const list = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of list) {
+      if (!m || !(m.isMeshStandardMaterial || m.isMeshPhysicalMaterial)) continue;
+      m.envMap = carEnvMap;
+      m.envMapIntensity = 0.55;
+      m.needsUpdate = true;
+    }
+  });
+}
+
 function optimizeCarModel(carRoot) {
   if (!carRoot) return;
   replaceTransmissionMaterials(carRoot);
   prepareCarGlass(carRoot);
   setOpaqueFrontSide(carRoot);
   mergeStaticAtlasMeshes(carRoot);
+  applyCarEnvironment(carRoot);
 }
 
 function sceneHasTransmission() {

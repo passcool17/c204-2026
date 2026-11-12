@@ -2,7 +2,7 @@
 
 - Lien jouable : https://passcool17.github.io/c204-2026/?v=445af52
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.4.0** — Lexus GLB v4.5 (chaîne 3D, modèle original) : 9 appels voiture, un seul matériau avec clearcoat, pas de transmission. Budget < 100 appels de rendu respecté. Repli primitives si le chargement d'un GLB échoue.
+- État : **v0.4.1** — Lexus GLB v4.6 (chaîne 3D, modèle original) : verre alpha 0,4 revenu (`windshield`, `window_left`, `window_right`), pas de transmission. L'unité se voit dans l'habitacle en Vue. Budget < 100 appels respecté. Repli primitives si le chargement d'un GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
@@ -18,7 +18,7 @@
 - Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader, KTX2Loader (transcodeurs jsDelivr).
 - Modèles : unité et voiture GLB finales, faites par la chaîne 3D de Pascal (Modélisation → Rig → Rendu), propre au projet, licence originale. Repli primitives si un GLB manque.
 - GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips).
-- GLB voiture : `assets/lexus-lc.glb` (v4.5, 190,6 Ko, 195 188 o, Draco + WebP, 28 615 triangles, 17 nœuds, 3 clips : `idle`, `doors_open`, `wheels_roll`). Source : chaîne 3D de Pascal (Modélisation → Rig → Rendu), modèle original propre au projet. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
+- GLB voiture : `assets/lexus-lc.glb` (v4.6, 193,4 Ko, 198 024 o, Draco + WebP, 28 663 triangles, 20 nœuds, 12 meshes, 3 clips : `idle`, `doors_open`, `wheels_roll`). Source : chaîne 3D de Pascal (Modélisation → Rig → Rendu), modèle original propre au projet. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
 - Textes : inspirés du récit publié par John Titor (2000-2001) et du manuel associé (document fictif, non vérifié) ; modernisation 2026 clairement présentée comme fictive. Aucun schéma électronique réel, aucune instruction dangereuse.
 
 ## Noms de nœuds attendus (GLB finaux)
@@ -214,6 +214,25 @@ Les deux GLB sont branchés (`url` égal à `path`). Laisser `url` à `null` év
 
   Budget respecté : 81 appels en Vue (< 100), un peu sous la v0.3.2 (89). Les 81 viennent de 8 meshes Lexus visibles (`soft_top_closed` déjà masqué) + 69 meshes unité + 1 sol, plus quelques appels. Environ deux fois plus de triangles (28 615 dans le GLB voiture, contre 11 925). Fps un peu plus bas en Vue (17,7 vs 20,1 à 412), malgré moins d'appels : plus de géométrie et le clearcoat. Écart acceptable, clearcoat gardé (meilleure peinture). Fps réel du S20 non mesuré.
 - Tests Playwright locaux : t01.js 81/81 (appels < 100 en Vue, aucun matériau transmission), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console, 0 fiche sans nœud, 0 fiche sous la barre. Captures : `/workspace/games3d/c204-2026-v040.png` (vue, portrait 412×915) et `c204-2026-v040-eclate.png` (vue éclatée).
+
+## v0.4.1 — 11 nov. 2026
+
+- Voiture GLB remplacée par la Lexus v4.6 (`assets/lexus-lc.glb`, 198 024 o), même chaîne 3D, modèle original. Unité inchangée. C'est la v4.5 plus le verre : 3 meshes `Lexus_Glass` (alpha BLEND 0,4, DoubleSide, pas de transmission) sur `windshield` (enfant de `lexus_lc_root`), `window_left` (enfant de `door_L`) et `window_right` (enfant de `door_R`). Ancre `c204_2026_unit` et `soft_top_closed` inchangés. 12 meshes au total (9 atlas + 3 verres).
+- Au chargement : `prepareCarGlass` met le verre en transparent, `depthWrite` false, `renderOrder` 1, pour qu'il s'affiche après les opaques et laisse voir l'unité. Le côté DoubleSide livré est conservé. `setCarObstruction` cache de nouveau `windshield`, `window_left` et `window_right` en Éclatée et en Assemblage (les nœuds ont un mesh). `soft_top_closed` reste masqué dès le chargement.
+- Caméra Vue un peu plus haute (portrait 3,7 / 3,55 / −3,2, cible 0 / 0,52 / −0,2 ; paysage 4,8 / 3,15 / −2,2). Sur la v4, à l'ancienne hauteur, la capote pliée et le bas de caisse masquaient l'unité derrière la tôle, même avec le verre. En Vue 412×915, l'unité (écran allumé) se lit clairement dans l'habitacle ; le pare-brise est transparent, sans artefact de tri visible. Correctif du bogue QA n°1 (unité illisible en Vue).
+- verify-glb : 0 erreur de validation, 0 erreur console, bbox 2,06 × 1,50 × 4,77 m, 28 663 triangles. `doors_open` et `wheels_roll` bougent ; `idle` reste une pose fixe (seul motif du FAIL).
+- Perf SwiftShader (indicatif, pas le S20), v0.4.0 → v0.4.1 :
+
+| Vue | 412×915 | 915×412 | 1280×800 |
+|---|---|---|---|
+| Vue v0.4.0 | 17,7 · 81 appels · 32 851 tri | 25,1 · 81 appels · 32 851 tri | 12,6 · 81 appels · 32 851 tri |
+| Vue v0.4.1 | **19,6** · **87 appels** · **33 043 tri** | **24,7** · 87 appels · 33 043 tri | **12,4** · 87 appels · 33 043 tri |
+| Éclatée v0.4.0 | 11,7 · 68 appels · 25 817 tri | 12,1 · 78 appels | 6,0 · 80 appels |
+| Éclatée v0.4.1 | **12,9** · **68 appels** · **25 721 tri** | **13,3** · 78 appels · 28 883 tri | **5,6** · 78 appels |
+| Assemblage v0.4.1 | **12,8** · **68 appels** · **25 721 tri** | **12,4** · 78 appels · 28 883 tri | **5,9** · 78 appels |
+
+  Budget respecté : 87 appels en Vue (< 100). Les 6 appels de plus qu'en v0.4.0 sont le verre (3 meshes, pass transparent). En Éclatée / Assemblage les vitres sont cachées, donc le même nombre d'appels qu'en v0.4.0 à 412. Fps du même ordre, un peu mieux en Vue 412 (caméra un peu plus haute, variance SwiftShader). Clearcoat conservé. Fps réel du S20 non mesuré.
+- Tests Playwright locaux : t01.js 81/81 (appels < 100 dans toutes les vues, aucun matériau transmission, 3 nœuds verre présents), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console. Captures : `/workspace/games3d/c204-2026-v041.png` (vue, portrait 412×915) et `c204-2026-v041-eclate.png` (vue éclatée).
 
 ## Prochaines étapes
 

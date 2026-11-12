@@ -728,7 +728,7 @@ const CAR_CLIP_ROOTS = ['body', 'door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'whe
 // body est une cible d'animation (idle, pose fixe). convertible_top peut être
 // un nœud vide (géométrie fondue dans body) : le garder dans le Set reste
 // inoffensif et sert de repli pour un ancien GLB.
-const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', ...CAR_CLIP_ROOTS]);
+const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', 'windshield', 'window_left', 'window_right', ...CAR_CLIP_ROOTS]);
 
 function isTransmissionMat(m) {
   return !!(m && (m.transmission > 0 || (m.isMeshPhysicalMaterial && m.transmission > 0)));
@@ -796,8 +796,8 @@ function collectProtected(carRoot) {
 
 function mergeStaticAtlasMeshes(carRoot) {
   // Repli : ne fusionne un matériau que s'il reste au moins 2 meshes opaques
-  // non protégés. Sur le GLB v4.5 (déjà fusionné, 9 meshes), les pièces
-  // animées et soft_top_closed sont protégées : aucun merge.
+  // non protégés. Sur le GLB v4.6 (déjà fusionné, verre à part), les pièces
+  // animées, le verre et soft_top_closed sont protégés : aucun merge.
   const protectedSet = collectProtected(carRoot);
   carRoot.updateWorldMatrix(true, true);
   const rootInv = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
@@ -840,9 +840,30 @@ function mergeStaticAtlasMeshes(carRoot) {
   }
 }
 
+function prepareCarGlass(root) {
+  // Verre alpha BLEND : écrire après les opaques, sans depthWrite, pour voir
+  // l'unité à travers. On garde le côté livré (DoubleSide en v4.6).
+  const seen = new Set();
+  root.traverse(o => {
+    if (!o.isMesh || !o.material) return;
+    const list = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of list) {
+      if (!m || isTransmissionMat(m)) continue;
+      if (!(m.transparent || m.opacity < 1 || (m.name && /glass/i.test(m.name)))) continue;
+      if (!seen.has(m.uuid)) {
+        m.transparent = true;
+        m.depthWrite = false;
+        seen.add(m.uuid);
+      }
+    }
+    if (list.some(m => m && seen.has(m.uuid))) o.renderOrder = 1;
+  });
+}
+
 function optimizeCarModel(carRoot) {
   if (!carRoot) return;
   replaceTransmissionMaterials(carRoot);
+  prepareCarGlass(carRoot);
   setOpaqueFrontSide(carRoot);
   mergeStaticAtlasMeshes(carRoot);
 }
@@ -939,10 +960,12 @@ function frameCamera(kind, instant = false) {
   const goalPos = new THREE.Vector3();
   const goalTgt = new THREE.Vector3();
   if (kind === 'view' || kind === 'wide') {
-    // Trois-quarts arrière droit, assez haut pour voir l'habitacle et l'unité.
-    goalTgt.set(0.05, 0.45, 0.05);
-    goalPos.set(4.05, 3.15, -3.55);
-    if (innerWidth > innerHeight) goalPos.set(5.15, 2.45, -2.15);
+    // Trois-quarts arrière droit, un peu plus haut qu'avant : sur la Lexus
+    // v4 la capote pliée et le bas de caisse masquaient l'unité à l'ancienne
+    // hauteur. On voit l'unité dans l'habitacle, à travers le verre.
+    goalTgt.set(0.0, 0.52, -0.2);
+    goalPos.set(3.7, 3.55, -3.2);
+    if (innerWidth > innerHeight) goalPos.set(4.8, 3.15, -2.2);
   } else {
     // Gros plan de haut, côté passager, capote masquée.
     mountNode.getWorldPosition(_v);
@@ -969,11 +992,9 @@ function nodeHasMesh(o) {
 }
 
 function setCarObstruction(hide) {
-  // En gros plan, on cache capote et vitres pour voir l'unité (repli provisoire).
-  // Ne bascule que les nœuds qui ont encore un mesh. Sur le GLB v4.5 :
-  // window_left / window_right et windshield n'existent plus (fondus dans
-  // door_* / body) ; convertible_top est un nœud vide ; soft_top_closed est
-  // déjà masqué au chargement. Ces lookups restent inoffensifs.
+  // En gros plan, on cache capote et vitres pour voir l'unité.
+  // Ne bascule que les nœuds qui ont encore un mesh (repli inoffensif si un
+  // nom est vide ou absent). soft_top_closed reste masqué dès le chargement.
   ['convertible_top', 'window_right', 'window_left', 'windshield'].forEach(n => {
     const o = carRoot && carRoot.getObjectByName(n);
     if (o && nodeHasMesh(o)) o.visible = !hide;

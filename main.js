@@ -724,11 +724,11 @@ function fitUnit(root, target) {
 
 /* ---------- Optimisations Lexus au chargement (pas de ré-export) ---------- */
 const CAR_CLIP_ROOTS = ['body', 'door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'];
-// capote basculée en Éclatée / Assemblage ; capote fermée déjà masquée.
-// body est une cible d'animation (idle, pose fixe). Les nœuds statiques devenus
-// vides dans le GLB v3.3 restent dans le Set : inoffensif, et sert de repli
-// si un ancien GLB non fusionné est rechargé.
-const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', ...CAR_CLIP_ROOTS]);
+// capote fermée (soft_top_closed) masquée au chargement si elle a un mesh.
+// body est une cible d'animation (idle, pose fixe). convertible_top peut être
+// un nœud vide (géométrie fondue dans body) : le garder dans le Set reste
+// inoffensif et sert de repli pour un ancien GLB.
+const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', ...CAR_CLIP_ROOTS]);
 
 function isTransmissionMat(m) {
   return !!(m && (m.transmission > 0 || (m.isMeshPhysicalMaterial && m.transmission > 0)));
@@ -796,8 +796,8 @@ function collectProtected(carRoot) {
 
 function mergeStaticAtlasMeshes(carRoot) {
   // Repli : ne fusionne un matériau que s'il reste au moins 2 meshes opaques
-  // non protégés. Sur le GLB v3.3 (déjà fusionné par matériau), body est
-  // protégé et bumper_front reste seul : aucun merge.
+  // non protégés. Sur le GLB v4.5 (déjà fusionné, 9 meshes), les pièces
+  // animées et soft_top_closed sont protégées : aucun merge.
   const protectedSet = collectProtected(carRoot);
   carRoot.updateWorldMatrix(true, true);
   const rootInv = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
@@ -970,10 +970,11 @@ function nodeHasMesh(o) {
 
 function setCarObstruction(hide) {
   // En gros plan, on cache capote et vitres pour voir l'unité (repli provisoire).
-  // Ne bascule que les nœuds qui ont encore un mesh (les noms statiques du
-  // GLB v3.3 sont souvent des nœuds vides : visible=false n'y cacherait rien,
-  // et il ne faut pas y toucher les matériaux).
-  ['convertible_top', 'window_right', 'window_left'].forEach(n => {
+  // Ne bascule que les nœuds qui ont encore un mesh. Sur le GLB v4.5 :
+  // window_left / window_right et windshield n'existent plus (fondus dans
+  // door_* / body) ; convertible_top est un nœud vide ; soft_top_closed est
+  // déjà masqué au chargement. Ces lookups restent inoffensifs.
+  ['convertible_top', 'window_right', 'window_left', 'windshield'].forEach(n => {
     const o = carRoot && carRoot.getObjectByName(n);
     if (o && nodeHasMesh(o)) o.visible = !hide;
   });

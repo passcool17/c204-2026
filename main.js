@@ -723,8 +723,11 @@ function fitUnit(root, target) {
 }
 
 /* ---------- Optimisations Lexus au chargement (pas de ré-export) ---------- */
-const CAR_CLIP_ROOTS = ['door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'];
+const CAR_CLIP_ROOTS = ['body', 'door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'];
 // capote basculée en Éclatée / Assemblage ; capote fermée déjà masquée.
+// body est une cible d'animation (idle, pose fixe). Les nœuds statiques devenus
+// vides dans le GLB v3.3 restent dans le Set : inoffensif, et sert de repli
+// si un ancien GLB non fusionné est rechargé.
 const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', ...CAR_CLIP_ROOTS]);
 
 function isTransmissionMat(m) {
@@ -792,6 +795,9 @@ function collectProtected(carRoot) {
 }
 
 function mergeStaticAtlasMeshes(carRoot) {
+  // Repli : ne fusionne un matériau que s'il reste au moins 2 meshes opaques
+  // non protégés. Sur le GLB v3.3 (déjà fusionné par matériau), body est
+  // protégé et bumper_front reste seul : aucun merge.
   const protectedSet = collectProtected(carRoot);
   carRoot.updateWorldMatrix(true, true);
   const rootInv = new THREE.Matrix4().copy(carRoot.matrixWorld).invert();
@@ -874,7 +880,7 @@ async function boot() {
     setupCarMixer(carRoot, gCar.animations);
     snapshotCarRest(carRoot);
     const hiddenTop = carRoot.getObjectByName('soft_top_closed');
-    if (hiddenTop) hiddenTop.visible = false;
+    if (hiddenTop && nodeHasMesh(hiddenTop)) hiddenTop.visible = false;
   }
   scene.add(carRoot);
   if (source.car === 'glb') optimizeCarModel(carRoot);
@@ -956,11 +962,20 @@ function frameCamera(kind, instant = false) {
 let camAnim = null;
 
 /* ---------- Modes ---------- */
+function nodeHasMesh(o) {
+  let found = false;
+  o.traverse(c => { if (c.isMesh) found = true; });
+  return found;
+}
+
 function setCarObstruction(hide) {
   // En gros plan, on cache capote et vitres pour voir l'unité (repli provisoire).
+  // Ne bascule que les nœuds qui ont encore un mesh (les noms statiques du
+  // GLB v3.3 sont souvent des nœuds vides : visible=false n'y cacherait rien,
+  // et il ne faut pas y toucher les matériaux).
   ['convertible_top', 'window_right', 'window_left'].forEach(n => {
     const o = carRoot && carRoot.getObjectByName(n);
-    if (o) o.visible = !hide;
+    if (o && nodeHasMesh(o)) o.visible = !hide;
   });
 }
 

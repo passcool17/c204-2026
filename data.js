@@ -2,7 +2,7 @@
 // (document fictif, non vérifié). Aucune machine réelle de ce type
 // n'a été démontrée. Le guide d'assemblage n'est pas un vrai plan.
 
-export const VERSION = '0.3.1';
+export const VERSION = '0.3.2';
 
 export const FRAME =
   'Version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n\'a été démontrée.';

@@ -1,6 +1,6 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable : https://passcool17.github.io/c204-2026/?v=445af52
+- Lien jouable : https://passcool17.github.io/c204-2026/?v=7c75076
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
 - État : **v0.4.1** — Lexus GLB v4.6 (chaîne 3D, modèle original) : verre alpha 0,4 revenu (`windshield`, `window_left`, `window_right`), pas de transmission. L'unité se voit dans l'habitacle en Vue. Budget < 100 appels respecté. Repli primitives si le chargement d'un GLB échoue.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).

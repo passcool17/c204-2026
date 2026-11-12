@@ -1326,6 +1326,46 @@ addEventListener('resize', resize);
 resize();
 
 /* ---------- Boucle ---------- */
+const fpsOverlay = (() => {
+  if (new URLSearchParams(location.search).get('fps') !== '1') return null;
+  const el = document.createElement('div');
+  el.id = 'fpsOverlay';
+  el.setAttribute('aria-live', 'off');
+  Object.assign(el.style, {
+    position: 'fixed',
+    left: '8px',
+    top: 'calc(env(safe-area-inset-top) + 58px)',
+    zIndex: '30',
+    pointerEvents: 'none',
+    font: '11px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+    color: '#d7ffe8',
+    background: '#07090de8',
+    border: '1px solid #2a4a40',
+    borderRadius: '8px',
+    padding: '6px 8px',
+    whiteSpace: 'pre',
+    textShadow: '0 1px 2px #000',
+  });
+  document.body.appendChild(el);
+  let frames = 0, t0 = performance.now(), last = t0, worst = 0;
+  return {
+    update() {
+      const now = performance.now();
+      const dt = now - last;
+      last = now;
+      frames++;
+      if (dt > worst) worst = dt;
+      if (now - t0 < 500) return;
+      const fps = frames * 1000 / (now - t0);
+      const i = renderer.info.render;
+      const pr = renderer.getPixelRatio();
+      el.textContent = `${fps.toFixed(1)} fps\n${i.calls} appels · ${i.triangles.toLocaleString('fr-CA')} tri\n${canvas.width}×${canvas.height} @${pr}×\npire ${worst.toFixed(0)} ms`;
+      frames = 0;
+      t0 = now;
+      worst = 0;
+    },
+  };
+})();
 function tick() {
   requestAnimationFrame(tick);
   const dt = Math.min(0.05, clock.getDelta());
@@ -1379,6 +1419,7 @@ function tick() {
   }
   controls.update();
   renderer.render(scene, camera);
+  if (fpsOverlay) fpsOverlay.update();
   if (ready && (labelsOn || selectedBom)) updateLabels();
 }
 tick();

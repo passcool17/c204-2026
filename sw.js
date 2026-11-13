@@ -5,7 +5,7 @@
    HTML and data.js are network-first. skipWaiting + clients.claim.
    Old caches are deleted on activate.
    GLBs are not precached (versioned names + runtime cache-first).
-   Basis transcoder files are precached. */
+   Basis transcoder and sound files are precached. Benchmarks are cached on demand, not precached. */
 const VERSION = new URL(self.location.href).searchParams.get('v') || '0';
 const VER = 'c204-2026-v' + VERSION;
 const PRECACHE = [
@@ -16,6 +16,12 @@ const PRECACHE = [
   './data.js?v=' + VERSION,
   './vendor/basis/basis_transcoder.js',
   './vendor/basis/basis_transcoder.wasm',
+  './vendor/detect-gpu.esm.js',
+  './assets/sfx/amb_engine.ogg',
+  './assets/sfx/wheels_roll.ogg',
+  './assets/sfx/door_open.ogg',
+  './assets/sfx/door_close.ogg',
+  './assets/sfx/ui_click.ogg',
 ];
 
 self.addEventListener('install', (e) => {
@@ -58,7 +64,7 @@ self.addEventListener('fetch', (e) => {
   }
 
   const path = url.pathname;
-  const known = /\/(assets|vendor)\//.test(path)
+  const known = /\/(assets|vendor|detect-gpu-benchmarks)\//.test(path)
     || /[?&]v=/.test(url.search)
     || threeCdn;
   if (!known) {

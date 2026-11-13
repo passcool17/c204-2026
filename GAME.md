@@ -1,25 +1,36 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable (version en ligne, **v0.6.0**) : https://passcool17.github.io/c204-2026/?v=965f207
+- Lien jouable (version en ligne, **v0.6.1**) : https://passcool17.github.io/c204-2026/?v=LIVE_SHA
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.6.0** — Lexus GLB v6.1 (cuivre, cabriolet ouvert seulement, KTX2 + meshopt), crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial. Le lien « Jeu : Mission Titor » de la v0.5.1 est inchangé.
+- État : **v0.6.1** — son (Web Audio, Kenney CC0) et detect-gpu 5.0.70 auto-hébergé, sur la base de la v0.6.0 (Lexus GLB v6.1 cuivre, cabriolet ouvert seulement, crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial). Aucune retouche visuelle de la voiture.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
 ## Contrôles
 
 - Glisser pour tourner, pincer pour zoomer, toucher une pièce = fiche.
-- Boutons (44 px minimum) : **Vue**, **Éclatée**, **Assemblage** (Précédent / Suivant), **Pièces**, **Étiquettes**, **C204 2001** (lien), plein écran. Lien discret sous le titre : **Jeu : Mission Titor**.
-- Clavier : `V` vue, `E` éclatée, `A` assemblage, `←` / `→` étape précédente / suivante, `L` étiquettes, `P` pièces, `F` ou `F11` plein écran, `Échap` ferme les panneaux.
-- Tests : `?demo=explode|assemble|labels`.
+- Boutons (44 px minimum) : **Vue**, **Éclatée**, **Assemblage** (Précédent / Suivant), **Pièces**, **Étiquettes**, **C204 2001** (lien), **son** (couper / activer, mémorisé), plein écran. Lien discret sous le titre : **Jeu : Mission Titor**.
+- Clavier : `V` vue, `E` éclatée, `A` assemblage, `←` / `→` étape précédente / suivante, `L` étiquettes, `P` pièces, `M` couper / activer le son, `F` ou `F11` plein écran, `Échap` ferme les panneaux.
+- Tests : `?demo=explode|assemble|labels`. Affichage perf : `?fps=1` (fps, appels, palier GPU et nom de la puce). Forcer un palier : `?tier=1` (pixelRatio 1, effets allégés).
 
 ## Ressources
 
 - Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader (unité, décodeur jsDelivr), KTX2Loader avec transcodeur Basis **local** (`vendor/basis/`, three@0.170.0, pas de CDN), MeshoptDecoder.
-- Service worker manuel : une seule constante `VERSION` (`data.js`) sert à `sw.js?v=` + VERSION (`updateViaCache: 'none'`). HTML et `data.js` en réseau d'abord. Les fichiers Basis sont précachés. Les GLB ne sont pas précachés (noms versionnés + cache à la demande). Anciens caches supprimés à l'activation.
+- detect-gpu **5.0.70** (MIT), module ESM vendorié depuis le paquet npm officiel (`vendor/detect-gpu.esm.js`), benchmarks auto-hébergés dans `./detect-gpu-benchmarks/` (fichiers du paquet, sans UNPKG ni CDN). `getGPUTier({ benchmarksURL: './detect-gpu-benchmarks' })`. Palier ≤ 1 → `pixelRatio` 1, clearcoat coupé, intensité d'environnement et lumières baissées, antialias off si le palier est déjà connu à la création du renderer. Sinon `pixelRatio` = min(devicePixelRatio, 2). Échec ou délai (4 s) : repli silencieux sur le rendu par défaut (palier 2), sans erreur console. `?tier=` force le palier (tests).
+- Service worker manuel : une seule constante `VERSION` (`data.js`) sert à `sw.js?v=` + VERSION (`updateViaCache: 'none'`). HTML et `data.js` en réseau d'abord. Fichiers Basis, detect-gpu ESM et sons précachés. Les GLB ne sont pas précachés. Les benchmarks detect-gpu sont mis en cache à la demande. Anciens caches supprimés à l'activation.
 - Modèles : unité (chaîne 3D de Pascal, propre au projet) et voiture Lexus v6.1. Repli primitives si un GLB manque.
 - GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips).
 - GLB voiture : `assets/lexus-lc-v61.glb` (v6.1, 623,3 Ko, 638 224 o, md5 `a376b2d2992faa590681377e89d39f72`). Extensions : KHR_mesh_quantization, EXT_meshopt_compression, KHR_texture_basisu, KHR_materials_clearcoat, KHR_materials_emissive_strength, KHR_texture_transform. Pas de KHR_materials_transmission. 33 909 triangles livrés (31 029 après inspect du fichier), 16 appels voiture (12 `Lexus_Atlas_v6` + 4 `Lexus_Glass_v6` alpha 0,28 BLEND), gpuSize 3,50 Mo. 3 clips, mêmes noms qu'en v5 : `idle` 3,0 s, `doors_open` 1,2 s (`door_L`, `door_R` ; `window_left` / `window_right` suivent), `wheels_roll` 3,0 s. Nœuds : `lexus_lc_root`, `c204_2026_unit` (−0,33, 0,2981, −0,88), `body`, `door_L`, `door_R`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`, `window_left` (enfant de `door_L`), `window_right` (enfant de `door_R`), `windshield`, `convertible_top` (capote pliée, visible), `interior`, `grille`, `steering_wheel`, `brakes` (nouveau, statique, 355 triangles). **Le nœud `soft_top_closed` a disparu** : le modèle est un cabriolet ouvert seulement. L'app garde un test nul sur ce nom, pas de bascule capote fermée. Peinture cuivre. Crédit : **2021 Lexus LC 500 Convertible by Ddiaz Design (https://sketchfab.com/ddiaz-design), CC BY-NC-SA 4.0**. Usage non commercial. Le même texte est dans le panneau Pièces du jeu. Source chaîne : Modélisation → Rig → Rendu, fichier Rendu `/workspace/assets3d/c204-2026/glb/lexus-lc.glb`. Repli v5 : `/workspace/assets3d/c204-2026/glb/backup/lexus-lc.v5.glb`. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
+- Sons (Web Audio, déverrouillage au premier `pointerdown` / `touchstart` / `keydown`, pas d'autoplay). Tous en mono 22 050 Hz, Vorbis, total **54 850 o**. Licence **CC0 1.0**, Kenney (www.kenney.nl). Le même détail est dans le panneau Pièces.
+
+| Fichier | Usage | Source | Licence | Poids |
+|---|---|---|---|---:|
+| `assets/sfx/amb_engine.ogg` | Boucle moteur / ambiance (douce, en boucle) | `spaceEngineLow_002`, [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) by Kenney | CC0 1.0 | 16 309 o |
+| `assets/sfx/wheels_roll.ogg` | Roulement pendant `wheels_roll` | `spaceEngineLow_000`, [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) by Kenney | CC0 1.0 | 21 596 o |
+| `assets/sfx/door_open.ogg` | Ouverture des portes (`doors_open` avant) | `doorOpen_002`, [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) by Kenney | CC0 1.0 | 6 658 o |
+| `assets/sfx/door_close.ogg` | Fermeture des portes (`doors_open` inverse) | `doorClose_002`, [Sci-Fi Sounds](https://kenney.nl/assets/sci-fi-sounds) by Kenney | CC0 1.0 | 6 643 o |
+| `assets/sfx/ui_click.ogg` | Clic des boutons | `click_001`, [Interface Sounds](https://kenney.nl/assets/interface-sounds) by Kenney | CC0 1.0 | 3 898 o |
+
 - Textes : inspirés du récit publié par John Titor (2000-2001) et du manuel associé (document fictif, non vérifié) ; modernisation 2026 clairement présentée comme fictive. Aucun schéma électronique réel, aucune instruction dangereuse.
 
 ## Noms de nœuds attendus (GLB finaux)
@@ -281,8 +292,28 @@ Livraison Rendu (GLB v6.1, après Rig de la v6.1 approuvée par Pascal) : rempla
 - Captures 412×915 : `/workspace/games3d/c204-2026-v61.png` (vue), `c204-2026-v61-eclate.png`, `c204-2026-v61-portes.png`, `c204-2026-v61-paysage.png` (915×412), `c204-2026-v61-34-avant.png`, `c204-2026-v61-profil.png`, `c204-2026-v61-arriere.png`, `c204-2026-v61-34-arriere.png`. Montage vs photos de `/workspace/assets3d/c204-2026/references/lc500/` : `/workspace/games3d/c204-2026-v61-vs-refs.jpg`.
 - Contrôle visuel (vue, 3/4 avant, profil, 3/4 arrière) : échelle et orientation correctes, silhouette de LC 500 convertible reconnaissable, bien mieux que la v5 très basique. Peinture cuivre lisible, pas de textures noires (KTX2 OK). Limites visibles : intérieur très blanc / peu ombré ; joints de porte et d'aile un peu marqués ; feux arrière peu lumineux par rapport aux photos ; prise d'air avant un peu creuse ; le profil de référence a la capote fermée, le jeu est ouvert seulement. Fps réel du S20 non mesuré pour cette version (v0.4.1 : 59 fps sur Galaxy S20 FE).
 
+## v0.6.1 — son et detect-gpu (13 nov. 2026)
+
+Demande de Pascal : « Ajoute le son et detect-gpu au jeu ». Base : v0.6.0, commit `965f2071a9d9e40155a7893d60f766973db78c71`. Pas de retouche visuelle de la voiture, cabriolet ouvert seulement.
+
+- `VERSION` = 0.6.1, cache-bust `?v=0.6.1`. Service worker : Basis + sons + `vendor/detect-gpu.esm.js` précachés, pas les GLB, benchmarks à la demande.
+- Son : Web Audio, contexte créé / repris au premier geste. Boucle d'ambiance, ouverture / fermeture de portes synchronisées avec `doors_open` avant / inverse, roulement pendant `wheels_roll`, clics d'interface. Bouton sourdine visible (44 px) et touche `M`, état dans `localStorage` (`c204-2026-settings`).
+- detect-gpu 5.0.70 auto-hébergé, voir Ressources. Sur la box (ANGLE / llvmpipe) : palier **1**, type `FALLBACK`, puce `mesa, llvmpipe (llvm 19.1.7 256 bits)`, `pixelRatio` 1 (chemin bas actif). `?tier=1` confirme aussi `pixelRatio` 1. Affiché dans `?fps=1`. Exposé sur `window.__c204.gpuTier` et `window.__c204.audio`.
+- **Draw calls** (`measure.mjs --gl angle-gl`, identiques à la v0.6.0, 0 erreur console, pas de transmission) :
+
+| Vue | 412×915 appels / tris | 915×412 appels / tris |
+|---|---:|---:|
+| Vue | **93** / **39 143** | **93** / **39 143** |
+| Éclatée | **72** / **28 823** | **82** / **32 156** |
+| Assemblage | **72** / **28 823** | **82** / **32 156** |
+
+  Budget respecté, max 93 < 100. Le son et detect-gpu ne changent pas le nombre d'appels.
+- Tests Playwright locaux : t01.js **94/94** (dont déverrouillage audio après un toucher, bascule sourdine, palier présent, `?tier=1` → pixelRatio 1), t02.js 24 fiches en 412×915 et 915×412, 0 erreur console.
+- Captures : `/workspace/games3d/c204-2026-v061.png` (vue, bouton son visible), `c204-2026-v061-fps.png` (`?fps=1`, palier et nom de puce), `c204-2026-v061-paysage.png`, `c204-2026-v061-paysage-fps.png`.
+
 ## Prochaines étapes
 
-- Test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`).
+- Test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`, palier et nom de puce).
 - Safari, PWA hors ligne sur téléphone, et verrouillage d'orientation non testés.
 - Capote fermée : absente du GLB v6.1. Si le jeu en a besoin, le demander à Modélisation (via Chef de cabinet), pas un correctif local.
+- Les écarts visuels déjà notés en v0.6.0 (habitacle trop blanc, joints, feux dimmes) ne sont pas corrigés ici : Pascal ne les a pas approuvés.

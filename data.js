@@ -2,7 +2,7 @@
 // (document fictif, non vérifié). Aucune machine réelle de ce type
 // n'a été démontrée. Le guide d'assemblage n'est pas un vrai plan.
 
-export const VERSION = '0.6.0';
+export const VERSION = '0.6.1';
 
 export const FRAME =
   'Version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n\'a été démontrée.';
@@ -258,3 +258,36 @@ export function idFor(name) {
   const k = keys.find(k => n.startsWith(k + '_'));
   return k ? map[k] : null;
 }
+
+export const SOUND_CREDITS = [
+  {
+    file: 'assets/sfx/amb_engine.ogg',
+    use: 'Boucle moteur / ambiance (douce, en boucle)',
+    source: 'spaceEngineLow_002, Sci-Fi Sounds by Kenney (https://kenney.nl/assets/sci-fi-sounds)',
+    license: 'CC0 1.0',
+  },
+  {
+    file: 'assets/sfx/wheels_roll.ogg',
+    use: 'Roulement des roues (pendant wheels_roll)',
+    source: 'spaceEngineLow_000, Sci-Fi Sounds by Kenney (https://kenney.nl/assets/sci-fi-sounds)',
+    license: 'CC0 1.0',
+  },
+  {
+    file: 'assets/sfx/door_open.ogg',
+    use: 'Ouverture des portes (doors_open, lecture avant)',
+    source: 'doorOpen_002, Sci-Fi Sounds by Kenney (https://kenney.nl/assets/sci-fi-sounds)',
+    license: 'CC0 1.0',
+  },
+  {
+    file: 'assets/sfx/door_close.ogg',
+    use: 'Fermeture des portes (doors_open, lecture inverse)',
+    source: 'doorClose_002, Sci-Fi Sounds by Kenney (https://kenney.nl/assets/sci-fi-sounds)',
+    license: 'CC0 1.0',
+  },
+  {
+    file: 'assets/sfx/ui_click.ogg',
+    use: 'Clic des boutons',
+    source: 'click_001, Interface Sounds by Kenney (https://kenney.nl/assets/interface-sounds)',
+    license: 'CC0 1.0',
+  },
+];

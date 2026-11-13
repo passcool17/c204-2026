@@ -9,7 +9,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.50';
+} from './data.js?v=0.51';
 
 const $ = (s, r = document) => r.querySelector(s);
 const canvas = $('#c');

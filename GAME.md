@@ -2,14 +2,14 @@
 
 - Lien jouable (version en ligne, **v0.4.1**) : https://passcool17.github.io/c204-2026/?v=7c75076
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.5.0 locale, pas encore publiée** — Lexus GLB v5 (chaîne 3D, modèle original, peinture Structural Blue) : `gltfpack` meshopt + quantification + WebP, verre alpha 0,4 (`windshield`, `window_left`, `window_right`), pas de transmission. L'unité reste ancrée sur `c204_2026_unit` et se voit dans l'habitacle en Vue. Budget < 100 appels respecté (91 en Vue). Repli primitives si le chargement d'un GLB échoue.
-- Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). **Le lien retour dans titor-c204 est à ajouter plus tard** (la remise en ligne de ce dépôt est en pause ; ce dépôt-ci n'y touche pas).
+- État : **v0.5.1** — contenu de la v0.5.0 (Lexus GLB v5, budget 91 appels en Vue), plus un lien discret « Jeu : Mission Titor » vers https://passcool17.github.io/titor-c204-jeu/ dans l'en-tête.
+- Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête, v0.5.1). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
 ## Contrôles
 
 - Glisser pour tourner, pincer pour zoomer, toucher une pièce = fiche.
-- Boutons (44 px minimum) : **Vue**, **Éclatée**, **Assemblage** (Précédent / Suivant), **Pièces**, **Étiquettes**, **C204 2001** (lien), plein écran.
+- Boutons (44 px minimum) : **Vue**, **Éclatée**, **Assemblage** (Précédent / Suivant), **Pièces**, **Étiquettes**, **C204 2001** (lien), plein écran. Lien discret sous le titre : **Jeu : Mission Titor**.
 - Clavier : `V` vue, `E` éclatée, `A` assemblage, `←` / `→` étape précédente / suivante, `L` étiquettes, `P` pièces, `F` ou `F11` plein écran, `Échap` ferme les panneaux.
 - Tests : `?demo=explode|assemble|labels`.
 
@@ -252,8 +252,14 @@ Les deux GLB sont branchés (`url` égal à `path`). Laisser `url` à `null` év
   Budget respecté : 91 appels en Vue (< 100), conforme à l'estimation de Rendu (87 − 12 + 16 = 91). 0 erreur console, pas de transmission. En Éclatée / Assemblage les vitres et la capote pliée visible sont cachées, d'où moins d'appels et de triangles. Fps réel du S20 non mesuré pour cette version (v0.4.1 : 59 fps sur Galaxy S20 FE).
 - Tests Playwright locaux : t01.js 81/81 (appels < 100 dans toutes les vues, aucun matériau transmission, nœuds verre et ancre OK), t02.js 24 fiches en 915×412 et 412×915, 0 erreur console. Cette version n'a pas été poussée : le lien GitHub Pages reste la v0.4.1. Captures : `/workspace/games3d/c204-2026-v050.png` (vue, portrait 412×915), `c204-2026-v050-eclate.png` (vue éclatée), `c204-2026-v050-compare.png` (montage 3/4 avant, profil, 3/4 arrière vs photos dans `/workspace/assets3d/c204-2026/references/lc500/`).
 
+## v0.5.1 — lien vers le jeu Mission Titor (12 nov. 2026)
+Demande de Pascal (relais Chef de cabinet : « link both ways to all 3 ») : ajouter un lien discret vers le jeu 3D, sans changer le rendu, les GLB ni le fonctionnement.
+- Un seul lien « Jeu : Mission Titor » dans l'en-tête (`#top`, sous le sous-titre). Cible : https://passcool17.github.io/titor-c204-jeu/ (nouvel onglet). Le bouton « C204 2001 » est inchangé.
+- L'en-tête gagne une ligne ; le texte d'aide est un peu plus bas. Ni les appels de dessin, ni les GLB, ni les modes Vue / Éclatée / Assemblage ne changent.
+- **Draw calls** (`measure.mjs --gl angle-gl`, 412×915, inchangés par rapport à la v0.5.0) : Vue **91** / 33 031 ; Éclatée **69** / 21 253 ; Assemblage **69** / 21 253. 0 erreur console, pas de transmission.
+- Tests : t01.js 81/81, t02.js 24 fiches en 412×915 et 915×412, 0 erreur console. Captures : `/workspace/games3d/c204-2026-v051.png`.
+
 ## Prochaines étapes
 
-- Publier la v0.5.0 (push normal, pas de force-push) seulement après accord de Pascal, puis test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`).
-- Ajouter plus tard le lien retour depuis titor-c204 (dépôt actuellement en pause).
+- Test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`).
 - Safari et verrouillage d'orientation non testés.

@@ -29,6 +29,8 @@ button.on,a.txt.on{background:#10332a;border-color:#3affc8;color:#b8ffe8}
 .close{position:absolute;top:8px;right:8px;width:44px;height:44px;font-size:18px;z-index:3}
 #parts .inner{padding-top:28px}
 #parts .lead{font-size:13px;opacity:.8;margin-bottom:10px}
+#parts .credits{font-size:12px;opacity:.85;margin:0 0 14px;line-height:1.45}
+#parts .credits a{color:#7fd3ff;text-decoration:underline;text-underline-offset:2px}
 #parts .row{display:flex;align-items:flex-start;gap:10px;width:100%;min-height:44px;text-align:left;padding:8px 10px;margin:0 0 6px;border-radius:12px}
 #parts .num{flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#ffd75a;color:#111;font:700 12px/28px system-ui,sans-serif;text-align:center}
 #parts .fr{font-weight:700}

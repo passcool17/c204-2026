@@ -1,9 +1,9 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable (version en ligne, **v0.4.1**) : https://passcool17.github.io/c204-2026/?v=7c75076
+- Lien jouable (version en ligne, **v0.6.0**) : https://passcool17.github.io/c204-2026/?v=LIVE_SHA
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.5.1** — contenu de la v0.5.0 (Lexus GLB v5, budget 91 appels en Vue), plus un lien discret « Jeu : Mission Titor » vers https://passcool17.github.io/titor-c204-jeu/ dans l'en-tête.
-- Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête, v0.5.1). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
+- État : **v0.6.0** — Lexus GLB v6.1 (cuivre, cabriolet ouvert seulement, KTX2 + meshopt), crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial. Le lien « Jeu : Mission Titor » de la v0.5.1 est inchangé.
+- Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
 ## Contrôles
@@ -15,10 +15,11 @@
 
 ## Ressources
 
-- Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader, KTX2Loader (transcodeurs jsDelivr), MeshoptDecoder (compression meshopt du GLB v5).
-- Modèles : unité et voiture GLB finales, faites par la chaîne 3D de Pascal (Modélisation → Rig → Rendu), propre au projet, licence originale. Repli primitives si un GLB manque.
+- Three.js r170 (licence MIT) via jsDelivr, modules ES + importmap. Chargeurs : GLTFLoader, DRACOLoader (unité, décodeur jsDelivr), KTX2Loader avec transcodeur Basis **local** (`vendor/basis/`, three@0.170.0, pas de CDN), MeshoptDecoder.
+- Service worker manuel : une seule constante `VERSION` (`data.js`) sert à `sw.js?v=` + VERSION (`updateViaCache: 'none'`). HTML et `data.js` en réseau d'abord. Les fichiers Basis sont précachés. Les GLB ne sont pas précachés (noms versionnés + cache à la demande). Anciens caches supprimés à l'activation.
+- Modèles : unité (chaîne 3D de Pascal, propre au projet) et voiture Lexus v6.1. Repli primitives si un GLB manque.
 - GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips).
-- GLB voiture : `assets/lexus-lc.glb` (v5, 355,7 Ko, 364 260 o, `gltfpack -kn -km -ac -cc` = EXT_meshopt_compression + KHR_mesh_quantization + WebP 1024, 30 679 triangles, 16 appels voiture, 3 clips : `idle` 3,0 s, `doors_open` 1,2 s, `wheels_roll` 3,0 s). Nœuds : `lexus_lc_root`, `c204_2026_unit` (−0,33, 0,2981, −0,88), `body`, `door_L`, `door_R`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`, `window_left` (enfant de `door_L`), `window_right` (enfant de `door_R`), `windshield`, `soft_top_closed`, `convertible_top`, `interior`, `grille`, `steering_wheel`. Les meshes sont sur des enfants de quantification sans nom : `visible` sur le nœud nommé les masque encore. Source : chaîne 3D de Pascal (Modélisation → Rig → Rendu), modèle original propre au projet. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`. Sauvegarde v4.6 : `/tmp/lexus-lc.v46.glb`.
+- GLB voiture : `assets/lexus-lc-v61.glb` (v6.1, 623,3 Ko, 638 224 o, md5 `a376b2d2992faa590681377e89d39f72`). Extensions : KHR_mesh_quantization, EXT_meshopt_compression, KHR_texture_basisu, KHR_materials_clearcoat, KHR_materials_emissive_strength, KHR_texture_transform. Pas de KHR_materials_transmission. 33 909 triangles livrés (31 029 après inspect du fichier), 16 appels voiture (12 `Lexus_Atlas_v6` + 4 `Lexus_Glass_v6` alpha 0,28 BLEND), gpuSize 3,50 Mo. 3 clips, mêmes noms qu'en v5 : `idle` 3,0 s, `doors_open` 1,2 s (`door_L`, `door_R` ; `window_left` / `window_right` suivent), `wheels_roll` 3,0 s. Nœuds : `lexus_lc_root`, `c204_2026_unit` (−0,33, 0,2981, −0,88), `body`, `door_L`, `door_R`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`, `window_left` (enfant de `door_L`), `window_right` (enfant de `door_R`), `windshield`, `convertible_top` (capote pliée, visible), `interior`, `grille`, `steering_wheel`, `brakes` (nouveau, statique, 355 triangles). **Le nœud `soft_top_closed` a disparu** : le modèle est un cabriolet ouvert seulement. L'app garde un test nul sur ce nom, pas de bascule capote fermée. Peinture cuivre. Crédit : **2021 Lexus LC 500 Convertible by Ddiaz Design (https://sketchfab.com/ddiaz-design), CC BY-NC-SA 4.0**. Usage non commercial. Le même texte est dans le panneau Pièces du jeu. Source chaîne : Modélisation → Rig → Rendu, fichier Rendu `/workspace/assets3d/c204-2026/glb/lexus-lc.glb`. Repli v5 : `/workspace/assets3d/c204-2026/glb/backup/lexus-lc.v5.glb`. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
 - Textes : inspirés du récit publié par John Titor (2000-2001) et du manuel associé (document fictif, non vérifié) ; modernisation 2026 clairement présentée comme fictive. Aucun schéma électronique réel, aucune instruction dangereuse.
 
 ## Noms de nœuds attendus (GLB finaux)
@@ -86,7 +87,7 @@ Silhouette de cabriolet générique, **sans aucun logo ni marque** (pas d'emblè
 
 Position de `c204_2026_unit` (Lexus GLB, espace `lexus_lc_root`) : **x = −0,33 m, y = 0,2981 m, z = −0,88 m** (avant en +Z, côté passager = −X, conducteur à gauche = +X), rotation 0. L'app parent l'unité sur ce nœud (`getObjectByName`), sans hardcoder la position — `MOUNT_POS` (−0,38 ; 0,30 ; −0,92) ne sert que de repli pour la voiture procédurale. L'unité ne traverse ni la caisse ni le coffre. Pas de siège arrière côté passager (la place est prise par l'unité).
 
-Hors-tout visible de la Lexus : **4,771 × 2,10 × 1,341 m** (L × l avec rétros × H). Largeur de caisse 1,92 m hors rétros. Le nœud `soft_top_closed` (capote fermée) reste caché.
+Hors-tout visible de la Lexus v6.1 (bbox du GLB) : **4,763 × 2,20 × 1,253 m** (L × l avec rétros × H). Dans le jeu, la bbox avec l'unité monte à **1,403 m** de haut. Largeur de caisse 1,92 m hors rétros. Plus de nœud `soft_top_closed` : cabriolet ouvert seulement, capote pliée (`convertible_top`) visible. Il n'y a pas de commande capote fermée.
 
 Dans l'app : si les deux GLB sont présents, on charge la voiture, on cherche `c204_2026_unit`, et on y place `c204_2026_root` (sauf si l'unité est déjà enfant de ce nœud). Si un GLB est absent (`url` null ou fichier manquant), repli sur les primitives du même nom.
 
@@ -127,7 +128,7 @@ Guide fictif, étape par étape, pièce par pièce. Boutons Précédent / Suivan
 ```json
 {
   "unit": { "url": "assets/c204-2026.glb", "path": "assets/c204-2026.glb", "root": "c204_2026_root" },
-  "car":  { "url": "assets/lexus-lc.glb", "path": "assets/lexus-lc.glb", "root": "lexus_lc_root", "mount": "c204_2026_unit" }
+  "car":  { "url": "assets/lexus-lc-v61.glb", "path": "assets/lexus-lc-v61.glb", "root": "lexus_lc_root", "mount": "c204_2026_unit" }
 }
 ```
 
@@ -259,7 +260,29 @@ Demande de Pascal (relais Chef de cabinet : « link both ways to all 3 ») : ajo
 - **Draw calls** (`measure.mjs --gl angle-gl`, 412×915, inchangés par rapport à la v0.5.0) : Vue **91** / 33 031 ; Éclatée **69** / 21 253 ; Assemblage **69** / 21 253. 0 erreur console, pas de transmission.
 - Tests : t01.js 81/81, t02.js 24 fiches en 412×915 et 915×412, 0 erreur console. Captures : `/workspace/games3d/c204-2026-v051.png`.
 
+## v0.6.0 — Lexus v6.1 cuivre, cabriolet ouvert (13 nov. 2026)
+
+Livraison Rendu (GLB v6.1, après Rig de la v6.1 approuvée par Pascal) : remplacement de la Lexus v5 (Structural Blue, `soft_top_closed` masqué) par le modèle cuivre, capote ouverte seulement.
+
+- Fichier jeu : `assets/lexus-lc-v61.glb` (638 224 o, md5 `a376b2d2992faa590681377e89d39f72`). Ancien `assets/lexus-lc.glb` (v5) retiré du dépôt ; repli : `/workspace/assets3d/c204-2026/glb/backup/lexus-lc.v5.glb`. `assets/model.json` pointe vers le nom versionné. `VERSION` = 0.6.0, cache-bust `?v=0.6.0`.
+- KTX2 : transcodeur Basis local (`vendor/basis/`, même révision que three@0.170.0), `detectSupport(renderer)`, MeshoptDecoder déjà en place. Géométrie quantifiée décodée en Float32 avant un éventuel merge.
+- Service worker manuel ajouté (`sw.js?v=` + VERSION). Basis précaché, GLB non précachés.
+- `soft_top_closed` absent : tous les `getObjectByName('soft_top_closed')` sont protégés (pas de crash). Pas de commande capote fermée à masquer. Crédit Ddiaz Design CC BY-NC-SA 4.0 dans GAME.md et en bas du panneau Pièces. Usage non commercial. Aucune recoloration de la peinture par nom de matériau (la teinte cuivre du GLB est conservée). Unité, ancre `c204_2026_unit` (−0,33 ; 0,2981 ; −0,88) et clips inchangés.
+- **Draw calls** (`measure.mjs --gl angle-gl`, backend ANGLE/llvmpipe sur la box — les fps ne valent pas ceux du S20), 10 s par vue :
+
+| Vue | 412×915 appels / tris | 915×412 appels / tris | v5 412×915 (réf.) |
+|---|---:|---:|---:|
+| Vue | **93** / **39 143** | **93** / **39 143** | 91 / 33 031 |
+| Éclatée | **72** / **28 823** | **82** / **32 156** | 69 / 21 253 |
+| Assemblage | **72** / **28 823** | **82** / **32 156** | 69 / 21 253 |
+
+  Budget respecté : tous les modes < 100 appels (max 93). +2 appels et +6 112 triangles en Vue par rapport à la v5 (capote pliée visible, freins, plus de géométrie). 0 erreur console, pas de transmission. En Éclatée / Assemblage les vitres et la capote pliée sont cachées (moins d'appels) ; en paysage la caméra plus large laisse plus de caisse dans le frustum (82 appels). `measure.mjs` surestime la VRAM textures (115 Mo, largeur×hauteur×4) ; `gltf-transform inspect` donne gpuSize 3,50 Mo.
+- Tests Playwright locaux : t01.js 81/81, t02.js 24 fiches en 412×915 et 915×412, 0 erreur console. Les 3 clips voiture se jouent (`idle`, `doors_open`, `wheels_roll`). Portes ouvertes et roues vérifiées à l'écran.
+- Captures 412×915 : `/workspace/games3d/c204-2026-v61.png` (vue), `c204-2026-v61-eclate.png`, `c204-2026-v61-portes.png`, `c204-2026-v61-paysage.png` (915×412), `c204-2026-v61-34-avant.png`, `c204-2026-v61-profil.png`, `c204-2026-v61-arriere.png`, `c204-2026-v61-34-arriere.png`. Montage vs photos de `/workspace/assets3d/c204-2026/references/lc500/` : `/workspace/games3d/c204-2026-v61-vs-refs.jpg`.
+- Contrôle visuel (vue, 3/4 avant, profil, 3/4 arrière) : échelle et orientation correctes, silhouette de LC 500 convertible reconnaissable, bien mieux que la v5 très basique. Peinture cuivre lisible, pas de textures noires (KTX2 OK). Limites visibles : intérieur très blanc / peu ombré ; joints de porte et d'aile un peu marqués ; feux arrière peu lumineux par rapport aux photos ; prise d'air avant un peu creuse ; le profil de référence a la capote fermée, le jeu est ouvert seulement. Fps réel du S20 non mesuré pour cette version (v0.4.1 : 59 fps sur Galaxy S20 FE).
+
 ## Prochaines étapes
 
 - Test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`).
-- Safari et verrouillage d'orientation non testés.
+- Safari, PWA hors ligne sur téléphone, et verrouillage d'orientation non testés.
+- Capote fermée : absente du GLB v6.1. Si le jeu en a besoin, le demander à Modélisation (via Chef de cabinet), pas un correctif local.

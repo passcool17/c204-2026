@@ -9,9 +9,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor,
-} from './data.js?v=0.51';
+} from './data.js?v=0.6.0';
 
 const $ = (s, r = document) => r.querySelector(s);
+const isTest = /(?:\?|&)t=/.test(location.search);
 const canvas = $('#c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: false });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
@@ -525,7 +526,7 @@ function highlight(obj, on, color) {
 let draco, ktx2;
 function makeLoader() {
   draco ||= new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/gltf/');
-  ktx2 ||= new KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/basis/').detectSupport(renderer);
+  ktx2 ||= new KTX2Loader().setTranscoderPath('./vendor/basis/').detectSupport(renderer);
   return new GLTFLoader().setDRACOLoader(draco).setKTX2Loader(ktx2).setMeshoptDecoder(MeshoptDecoder);
 }
 
@@ -725,11 +726,10 @@ function fitUnit(root, target) {
 
 /* ---------- Optimisations Lexus au chargement (pas de ré-export) ---------- */
 const CAR_CLIP_ROOTS = ['body', 'door_L', 'door_R', 'wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'];
-// capote fermée (soft_top_closed) masquée au chargement si elle a un mesh.
-// body est une cible d'animation (idle, pose fixe). convertible_top peut être
-// un nœud vide (géométrie fondue dans body) : le garder dans le Set reste
-// inoffensif et sert de repli pour un ancien GLB.
-const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', 'windshield', 'window_left', 'window_right', 'grille', 'steering_wheel', ...CAR_CLIP_ROOTS]);
+// v6.1 n'a plus soft_top_closed (cabriolet ouvert seulement, capote pliée).
+// Le nom reste dans le Set : getObjectByName peut renvoyer undefined, collectProtected l'ignore.
+// body est une cible d'animation (idle, pose fixe). brakes est statique, livré en v6.1.
+const CAR_KEEP_SEPARATE = new Set(['c204_2026_unit', 'convertible_top', 'soft_top_closed', 'interior', 'windshield', 'window_left', 'window_right', 'grille', 'steering_wheel', 'brakes', ...CAR_CLIP_ROOTS]);
 
 function isTransmissionMat(m) {
   return !!(m && (m.transmission > 0 || (m.isMeshPhysicalMaterial && m.transmission > 0)));
@@ -795,6 +795,25 @@ function collectProtected(carRoot) {
   return set;
 }
 
+/* Quantized (KHR_mesh_quantization) attributes must be decoded to
+   Float32 before applyMatrix4 / merge, or write-back clamps into the
+   integer buffer and the mesh becomes kilometre-scale. */
+function geometryToFloat32(g) {
+  for (const name of g.attributes ? Object.keys(g.attributes) : []) {
+    const a = g.getAttribute(name);
+    if (!a || a.array instanceof Float32Array) continue;
+    const itemSize = a.itemSize;
+    const arr = new Float32Array(a.count * itemSize);
+    for (let i = 0; i < a.count; i++) {
+      for (let k = 0; k < itemSize; k++) {
+        arr[i * itemSize + k] = a.getComponent(i, k);
+      }
+    }
+    g.setAttribute(name, new THREE.BufferAttribute(arr, itemSize));
+  }
+  return g;
+}
+
 function mergeStaticAtlasMeshes(carRoot) {
   // Repli : ne fusionne un matériau que s'il reste au moins 2 meshes opaques
   // non protégés. Sur le GLB v5 (meshes sur enfants de quantification sans nom),
@@ -819,7 +838,7 @@ function mergeStaticAtlasMeshes(carRoot) {
     if (meshes.length < 2) continue;
     const geos = [];
     for (const mesh of meshes) {
-      const geo = mesh.geometry.clone();
+      const geo = geometryToFloat32(mesh.geometry.clone());
       bake.multiplyMatrices(rootInv, mesh.matrixWorld);
       geo.applyMatrix4(bake);
       geos.push(geo);
@@ -864,7 +883,7 @@ function prepareCarGlass(root) {
 
 let carEnvMap = null;
 function applyCarEnvironment(carRoot) {
-  // Peinture Structural Blue (MeshPhysicalMaterial, métal + clearcoat) :
+  // Peinture cuivre v6.1 (MeshPhysicalMaterial, métal + clearcoat) :
   // sans carte d'environnement, la caisse reste noire. PMREM une seule fois
   // au chargement, uniquement sur les matériaux de la voiture (pas l'unité).
   if (!carEnvMap) {
@@ -925,6 +944,7 @@ async function boot() {
     source.car = 'glb';
     setupCarMixer(carRoot, gCar.animations);
     snapshotCarRest(carRoot);
+    // v6.1 : soft_top_closed absent. Garde nulle, pas de bascule capote fermée.
     const hiddenTop = carRoot.getObjectByName('soft_top_closed');
     if (hiddenTop && nodeHasMesh(hiddenTop)) hiddenTop.visible = false;
   }
@@ -978,6 +998,9 @@ async function boot() {
   if (demo === 'assemble') setMode('assemble');
   if (demo === 'labels') setLabels(true);
   if (demo === 'lid') openLid();
+  if (!isTest && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js?v=' + VERSION, { updateViaCache: 'none' }).catch(() => {});
+  }
 }
 
 /* ---------- Caméra ---------- */
@@ -1124,7 +1147,8 @@ function closeSheet() {
 function buildPartsPanel() {
   const el = $('#partsContent');
   el.innerHTML = `<h2>Pièces de l'unité C204 · 2026</h2>
-    <p class="lead">${FRAME} Guide d'assemblage fictif — pas un vrai plan.</p>`;
+    <p class="lead">${FRAME} Guide d'assemblage fictif — pas un vrai plan.</p>
+    <p class="credits">2021 Lexus LC 500 Convertible by Ddiaz Design (<a href="https://sketchfab.com/ddiaz-design" target="_blank" rel="noopener noreferrer">https://sketchfab.com/ddiaz-design</a>), CC BY-NC-SA 4.0. Usage non commercial.</p>`;
   BOM.forEach(b => {
     const btn = document.createElement('button');
     btn.className = 'row';

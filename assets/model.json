@@ -5,8 +5,8 @@
     "root": "c204_2026_root"
   },
   "car": {
-    "url": "assets/lexus-lc.glb",
-    "path": "assets/lexus-lc.glb",
+    "url": "assets/lexus-lc-v61.glb",
+    "path": "assets/lexus-lc-v61.glb",
     "root": "lexus_lc_root",
     "mount": "c204_2026_unit"
   },

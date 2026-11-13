@@ -1,8 +1,8 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable (version en ligne, **v0.6.1**) : https://passcool17.github.io/c204-2026/?v=902aeb2
+- Lien jouable (version en ligne, **v0.6.2**) : https://passcool17.github.io/c204-2026/?v=LIVE_SHA
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
-- État : **v0.6.1** — son (Web Audio, Kenney CC0) et detect-gpu 5.0.70 auto-hébergé, sur la base de la v0.6.0 (Lexus GLB v6.1 cuivre, cabriolet ouvert seulement, crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial). Aucune retouche visuelle de la voiture.
+- État : **v0.6.2** — correctif son : `unlock()` relance aussi la boucle du clip voiture en cours (`wheels_roll` en Vue). Base v0.6.1 (son Kenney CC0 + detect-gpu 5.0.70, Lexus GLB v6.1 cuivre, cabriolet ouvert seulement, crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial). Aucune retouche visuelle de la voiture.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
 - Cadre : version fictive inspirée du récit de John Titor (document fictif, non vérifié). Aucune machine réelle de ce type n'a été démontrée. Le mode Assemblage est un **guide fictif — pas un vrai plan**.
 
@@ -21,7 +21,7 @@
 - Modèles : unité (chaîne 3D de Pascal, propre au projet) et voiture Lexus v6.1. Repli primitives si un GLB manque.
 - GLB unité : `assets/c204-2026.glb` (1,15 Mo, Draco + WebP, 3 060 triangles, 70 nœuds, 28 clips).
 - GLB voiture : `assets/lexus-lc-v61.glb` (v6.1, 623,3 Ko, 638 224 o, md5 `a376b2d2992faa590681377e89d39f72`). Extensions : KHR_mesh_quantization, EXT_meshopt_compression, KHR_texture_basisu, KHR_materials_clearcoat, KHR_materials_emissive_strength, KHR_texture_transform. Pas de KHR_materials_transmission. 33 909 triangles livrés (31 029 après inspect du fichier), 16 appels voiture (12 `Lexus_Atlas_v6` + 4 `Lexus_Glass_v6` alpha 0,28 BLEND), gpuSize 3,50 Mo. 3 clips, mêmes noms qu'en v5 : `idle` 3,0 s, `doors_open` 1,2 s (`door_L`, `door_R` ; `window_left` / `window_right` suivent), `wheels_roll` 3,0 s. Nœuds : `lexus_lc_root`, `c204_2026_unit` (−0,33, 0,2981, −0,88), `body`, `door_L`, `door_R`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`, `window_left` (enfant de `door_L`), `window_right` (enfant de `door_R`), `windshield`, `convertible_top` (capote pliée, visible), `interior`, `grille`, `steering_wheel`, `brakes` (nouveau, statique, 355 triangles). **Le nœud `soft_top_closed` a disparu** : le modèle est un cabriolet ouvert seulement. L'app garde un test nul sur ce nom, pas de bascule capote fermée. Peinture cuivre. Crédit : **2021 Lexus LC 500 Convertible by Ddiaz Design (https://sketchfab.com/ddiaz-design), CC BY-NC-SA 4.0**. Usage non commercial. Le même texte est dans le panneau Pièces du jeu. Source chaîne : Modélisation → Rig → Rendu, fichier Rendu `/workspace/assets3d/c204-2026/glb/lexus-lc.glb`. Repli v5 : `/workspace/assets3d/c204-2026/glb/backup/lexus-lc.v5.glb`. Détails : `/workspace/assets3d/c204-2026/MANIFEST.md`.
-- Sons (Web Audio, déverrouillage au premier `pointerdown` / `touchstart` / `keydown`, pas d'autoplay). Tous en mono 22 050 Hz, Vorbis, total **54 850 o**. Licence **CC0 1.0**, Kenney (www.kenney.nl). Le même détail est dans le panneau Pièces.
+- Sons (Web Audio, déverrouillage au premier `pointerdown` / `touchstart` / `keydown`, pas d'autoplay). Tous en mono 22 050 Hz, Vorbis, total **55 104 o**. Licence **CC0 1.0**, Kenney (www.kenney.nl). Le même détail est dans le panneau Pièces.
 
 | Fichier | Usage | Source | Licence | Poids |
 |---|---|---|---|---:|
@@ -311,9 +311,16 @@ Demande de Pascal : « Ajoute le son et detect-gpu au jeu ». Base : v0.6.0, com
 - Tests Playwright locaux : t01.js **94/94** (dont déverrouillage audio après un toucher, bascule sourdine, palier présent, `?tier=1` → pixelRatio 1), t02.js 24 fiches en 412×915 et 915×412, 0 erreur console.
 - Captures : `/workspace/games3d/c204-2026-v061.png` (vue, bouton son visible), `c204-2026-v061-fps.png` (`?fps=1`, palier et nom de puce), `c204-2026-v061-paysage.png`, `c204-2026-v061-paysage-fps.png`.
 
+## v0.6.2 — boucle roues au déverrouillage (13 nov. 2026)
+
+Correctif du bogue moyen QA v0.6.1 : en Vue, `syncCarClip` lance `wheels_roll` avant le premier geste ; `unlock()` ne démarrait que `amb_engine.ogg`. `unlock()` (si le son n'est pas coupé) relance maintenant les mêmes boucles que `setMuted(false)` : ambiance + boucle du clip courant (`wheels_roll`). Total des 5 fichiers sons recalculé : **55 104 o** (le 54 850 o de la v0.6.1 était une mauvaise addition ; les poids individuels étaient déjà justes). `VERSION` = 0.6.2, cache-bust `?v=0.6.2`.
+
+- **Draw calls** (`measure.mjs --gl angle-gl`, 412×915, inchangés) : Vue **93** / 39 143 ; Éclatée **72** / 28 823 ; Assemblage **72** / 28 823. 0 erreur console, pas de transmission.
+- Tests Playwright locaux : t01.js **98/98** (dont `wheels_clip_before_gesture` et `wheels_loop_on_unlock` en 412×915 et 915×412), t02.js 24 fiches aux deux tailles, 0 erreur console.
+
 ## Prochaines étapes
 
-- Test QA à la taille mobile et mesure fps réelle sur S20 FE (`?fps=1`, palier et nom de puce).
+- Test QA à la taille mobile (retest du bogue 1) et mesure fps réelle sur S20 FE (`?fps=1`, palier et nom de puce).
 - Safari, PWA hors ligne sur téléphone, et verrouillage d'orientation non testés.
 - Capote fermée : absente du GLB v6.1. Si le jeu en a besoin, le demander à Modélisation (via Chef de cabinet), pas un correctif local.
 - Les écarts visuels déjà notés en v0.6.0 (habitacle trop blanc, joints, feux dimmes) ne sont pas corrigés ici : Pascal ne les a pas approuvés.

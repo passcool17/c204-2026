@@ -10,7 +10,7 @@ import { getGPUTier } from './vendor/detect-gpu.esm.js';
 import {
   VERSION, FRAME, ROOTS, UNIT_SIZE, CAR_SIZE, MOUNT_POS,
   PARTS, BOM, ASSEMBLY, idFor, SOUND_CREDITS,
-} from './data.js?v=0.6.1';
+} from './data.js?v=0.6.2';
 
 const $ = (s, r = document) => r.querySelector(s);
 const isTest = /(?:\?|&)t=/.test(location.search);
@@ -172,7 +172,7 @@ const AudioSys = {
       if (!this.ctx) return false;
       if (this.ctx.state === 'suspended') await this.ctx.resume();
       this.unlocked = this.ctx.state === 'running';
-      if (this.unlocked && !this.muted) this.startLoop('amb', 0.08);
+      if (this.unlocked && !this.muted) this._restartLoops();
       return this.unlocked;
     } catch {
       return false;
@@ -229,11 +229,15 @@ const AudioSys = {
     if (this.muted) {
       Object.keys(this.loops).forEach(n => this.stopLoop(n, 0.05));
     } else if (this.unlocked) {
-      this.startLoop('amb', 0.08);
-      if (typeof currentCarClipName !== 'undefined' && currentCarClipName === 'wheels_roll') this.startLoop('wheels', 0.16);
+      this._restartLoops();
     }
     syncMute();
     saveSettings();
+  },
+  _restartLoops() {
+    if (this.muted || !this.unlocked) return;
+    this.startLoop('amb', 0.08);
+    if (typeof currentCarClipName !== 'undefined' && currentCarClipName === 'wheels_roll') this.startLoop('wheels', 0.16);
   },
 };
 
@@ -1774,6 +1778,7 @@ window.__c204 = {
       muted: AudioSys.muted,
       state: AudioSys.ctx ? AudioSys.ctx.state : 'none',
       names: Object.keys(AudioSys.buffers),
+      loops: Object.keys(AudioSys.loops),
     };
   },
   setMuted: (v) => AudioSys.setMuted(!!v),

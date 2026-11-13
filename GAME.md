@@ -1,6 +1,6 @@
 # C204 · 2026 — unité fictive modernisée (simulation 3D)
 
-- Lien jouable (version en ligne, **v0.6.2**) : https://passcool17.github.io/c204-2026/?v=LIVE_SHA
+- Lien jouable (version en ligne, **v0.6.2**) : https://passcool17.github.io/c204-2026/?v=7f1df1d
 - Dépôt : https://github.com/passcool17/c204-2026 (bot Arcade 3D)
 - État : **v0.6.2** — correctif son : `unlock()` relance aussi la boucle du clip voiture en cours (`wheels_roll` en Vue). Base v0.6.1 (son Kenney CC0 + detect-gpu 5.0.70, Lexus GLB v6.1 cuivre, cabriolet ouvert seulement, crédit Ddiaz Design CC BY-NC-SA 4.0, usage non commercial). Aucune retouche visuelle de la voiture.
 - Lien vers l'app d'origine : [C204 originale (titor-c204)](https://passcool17.github.io/titor-c204/). Lien vers le jeu : [Jeu : Mission Titor](https://passcool17.github.io/titor-c204-jeu/) (dans l'en-tête). Le même lien est aussi dans titor-c204 (scènes Machine et Corvette).
